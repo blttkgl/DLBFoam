@@ -139,6 +139,7 @@ Foam::scalar Foam::loadBalancedChemistryModel<ThermoType>::solve
     const DeltaTType& deltaT
 )
 {
+    this->tabulation().reset();
     // CPU time analysis
     clockTime timer;
     scalar t_getProblems(0);
@@ -204,6 +205,7 @@ Foam::scalar Foam::loadBalancedChemistryModel<ThermoType>::solve
                         << setw(22) << Pstream::myProcNo()
                         << endl;
     }
+    this->tabulation().update();
 
     return updateReactionRates(incomingSolutions);
 }
@@ -222,31 +224,67 @@ void Foam::loadBalancedChemistryModel<ThermoType>::solveSingle
     clockTime time;
     time.timeIncrement();
 
-    // Define a const label to pass as the cell index placeholder
-    const label arbitrary = 0;
-
-    // Calculate the chemical source terms
-    while(timeLeft > small)
+    // Composition vector (Yi, T, p, deltaT)
+    scalarField phiq(this->nEqns() + 1);
+    scalarField Rphiq(this->nEqns() + 1);
+    for (label i=0; i<this->nSpecie(); i++)
     {
-        scalar dt = timeLeft;
-        this->solve(
-            problem.pi,
-            problem.Ti,
-            problem.c,
-            arbitrary,
-            dt,
-            problem.deltaTChem);
-        timeLeft -= dt;
+        phiq[i] = problem.c[i];
+    }
+    phiq[this->nSpecie()] = problem.Ti;
+    phiq[this->nSpecie() + 1] = problem.pi;
+    phiq[this->nSpecie() + 2] = problem.deltaT;
+
+    if(this->tabulation().retrieve(phiq,Rphiq))
+    {
+        // Retrieved solution stored in Rphiq
+        for (label i=0; i<this->nSpecie(); i++)
+        { 
+            problem.c[i] = Rphiq[i];        
+        }
+    }
+    else
+    {
+        // Calculate the chemical source terms
+        while(timeLeft > small)
+        {
+            scalar dt = timeLeft;
+            this->solve(
+                problem.pi,
+                problem.Ti,
+                problem.c,
+                problem.cellid,
+                dt,
+                problem.deltaTChem);
+            timeLeft -= dt;
+        }
+        if (this->tabulation().tabulates())
+        {
+
+            for (label i=0; i<this->nSpecie(); i++)
+            {
+                Rphiq[i] = problem.c[i];
+            }
+            Rphiq[Rphiq.size()-3] = problem.Ti;
+            Rphiq[Rphiq.size()-2] = problem.pi;
+            Rphiq[Rphiq.size()-1] = problem.deltaT;
+            
+            this->tabulation().add
+            (
+                phiq,
+                Rphiq,
+                this->nSpecie(),
+                solution.cellid,
+                problem.deltaT
+            );
+        }
     }
 
-    solution.rr = (problem.c - c0) * problem.rhoi / problem.deltaT;
     solution.deltaTChem = min(problem.deltaTChem, this->deltaTChemMax_);
-
+    solution.cellid = problem.cellid;
+    solution.rr = (problem.c - c0) * problem.rhoi / problem.deltaT;
     // Timer ends
     solution.cpuTime = time.timeIncrement();
-
-    solution.cellid = problem.cellid;
-    solution.rhoi = problem.rhoi;
 }
 
 
@@ -360,7 +398,7 @@ Foam::loadBalancedChemistryModel<ThermoType>::getProblems
 
     label counter = 0;
     forAll(T, celli)
-    {
+    {       
             for(label i = 0; i < this->nSpecie(); i++)
             {
                 massFraction[i] = this->Y()[i][celli];
