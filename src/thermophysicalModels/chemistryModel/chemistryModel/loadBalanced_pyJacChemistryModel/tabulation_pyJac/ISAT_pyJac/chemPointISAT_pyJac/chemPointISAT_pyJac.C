@@ -24,7 +24,7 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "chemPointISAT_pyJac.H"
-#include "ISAT.H"
+#include "ISAT_pyJac.H"
 #include "odeChemistryModel.H"
 #include "SVD.H"
 
@@ -234,7 +234,7 @@ Foam::chemPointISAT_pyJac::chemPointISAT_pyJac
 
     idT_ = completeSpaceSize - 3;
     idp_ = completeSpaceSize - 2;
-
+    /*
     if (table_.reduction())
     {
         simplifiedToCompleteIndex_.setSize(nActive_);
@@ -250,10 +250,10 @@ Foam::chemPointISAT_pyJac::chemPointISAT_pyJac
             simplifiedToCompleteIndex_[i] = table_.chemistry().sToc(i);
         }
     }
-
-    const label reduOrCompDim =
-        table_.reduction() ? nActive_ + 3 : completeSpaceSize;
-
+    */
+    //const label reduOrCompDim =
+    //    table_.reduction() ? nActive_ + 3 : completeSpaceSize;
+    const label reduOrCompDim = completeSpaceSize;
     // SVD decomposition A = U*D*V^T
     SVD svdA(A);
 
@@ -277,11 +277,12 @@ Foam::chemPointISAT_pyJac::chemPointISAT_pyJac
         for (label j=0; j<reduOrCompDim; j++)
         {
             label compi = i;
-
+            /*
             if (table_.reduction())
             {
                 compi = simplifiedToCompleteIndex(i);
             }
+            */
 
             // SF*A/tolerance
             // (where SF is diagonal with inverse of scale factors)
@@ -338,8 +339,7 @@ bool Foam::chemPointISAT_pyJac::inEOA(const scalarField& phiq)
 {
     const scalarField dphi(phiq - phi());
 
-    const label dim =
-        table_.reduction() ? nActive_ : completeSpaceSize() - 3;
+    const label dim = completeSpaceSize() - 3;
 
     scalar epsTemp = 0;
     List<scalar> propEps(completeSpaceSize(), scalar(0));
@@ -351,6 +351,7 @@ bool Foam::chemPointISAT_pyJac::inEOA(const scalarField& phiq)
         // When mechanism reduction is inactive OR on active species multiply L
         // by dphi to get the distance in the active species direction else (for
         // inactive species), just multiply the diagonal element and dphi
+        /*
         if
         (
             !(table_.reduction())
@@ -376,10 +377,11 @@ bool Foam::chemPointISAT_pyJac::inEOA(const scalarField& phiq)
             temp += LT_(si, dim+1)*dphi[idp_];
             temp += LT_(si, dim+2)*dphi[iddeltaT_];
         }
-        else
-        {
+        */
+        //else
+        //{
             temp = dphi[i]/(tolerance_*scaleFactor_[i]);
-        }
+        //}
 
         epsTemp += sqr(temp);
 
@@ -486,14 +488,14 @@ bool Foam::chemPointISAT_pyJac::checkSolution
     const scalarSquareMatrix& Avar(A());
     scalar dRl = 0;
 
-    const label dim =
-        table_.reduction() ? nActive_ : completeSpaceSize() - 2;
+    const label dim = completeSpaceSize() - 2;
 
     // Since we build only the solution for the species, T and p are not
     // included
     for (label i=0; i<completeSpaceSize()-3; i++)
     {
         dRl = 0;
+        /*
         if (table_.reduction())
         {
             const label si = completeToSimplifiedIndex_[i];
@@ -515,13 +517,14 @@ bool Foam::chemPointISAT_pyJac::checkSolution
                 dRl = dphi[i];
             }
         }
-        else
-        {
+        */
+        //else
+        //{
             for (label j=0; j<completeSpaceSize(); j++)
             {
                 dRl += Avar(i, j)*dphi[j];
             }
-        }
+        //}
         eps2 += sqr((dR[i]-dRl)/scaleFactorV[i]);
     }
 
@@ -542,7 +545,7 @@ bool Foam::chemPointISAT_pyJac::grow(const scalarField& phiq)
 {
     const scalarField dphi(phiq - phi());
     const label initNActiveSpecies(nActive_);
-
+    /*
     if (table_.reduction())
     {
         label activeAdded(0);
@@ -662,10 +665,11 @@ bool Foam::chemPointISAT_pyJac::grow(const scalarField& phiq)
                 A_(i, i) = 1;
             }
         }
+        
     }
+    */
 
-    const label dim =
-        table_.reduction() ? nActive_ + 3 : completeSpaceSize();
+    const label dim = completeSpaceSize();
 
     // beginning of grow algorithm
     scalarField phiTilde(dim, 0);
@@ -676,10 +680,7 @@ bool Foam::chemPointISAT_pyJac::grow(const scalarField& phiq)
     {
         for (label j=i; j<dim-3; j++)// LT is upper triangular
         {
-            const label sj =
-                table_.reduction()
-              ? simplifiedToCompleteIndex_[j]
-              : j;
+            const label sj = j;
 
             phiTilde[i] += LT_(i, j)*dphi[sj];
         }

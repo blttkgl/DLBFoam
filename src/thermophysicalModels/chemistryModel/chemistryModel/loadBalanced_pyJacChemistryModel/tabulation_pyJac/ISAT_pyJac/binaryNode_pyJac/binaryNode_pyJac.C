@@ -68,7 +68,7 @@ void Foam::binaryNode_pyJac::calcV
 {
     // LT is the transpose of the L matrix
     const scalarSquareMatrix& LT = elementLeft.LT();
-    const bool reduction = elementLeft.table().reduction();
+    //const bool reduction = elementLeft.table().reduction();
 
     // Difference of composition in the full species domain
     const scalarField& phil(elementLeft.phi());
@@ -81,6 +81,8 @@ void Foam::binaryNode_pyJac::calcV
     {
         label si = i;
         bool outOfIndexI = true;
+        
+        /*
         if (reduction)
         {
             if (i<elementLeft.completeSpaceSize() - 3)
@@ -95,14 +97,15 @@ void Foam::binaryNode_pyJac::calcV
                 si = elementLeft.nActive() + dif;
             }
         }
-        if (!reduction || (reduction && !(outOfIndexI)))
+        */
+        if (true)
         {
             v[i] = 0;
             for (label j=0; j<elementLeft.completeSpaceSize(); j++)
             {
                 label sj = j;
                 bool outOfIndexJ = true;
-
+                /*
                 if (reduction)
                 {
                     if (j < elementLeft.completeSpaceSize() - 3)
@@ -118,8 +121,8 @@ void Foam::binaryNode_pyJac::calcV
                         sj = elementLeft.nActive() + dif;
                     }
                 }
-
-                if (!reduction ||(reduction && !(outOfIndexJ)))
+                */
+                if (true)//(!reduction ||(reduction && !(outOfIndexJ)))
                 {
                     // Since L is a lower triangular matrix k=0->min(i, j)
                     for (label k=0; k<=min(si, sj); k++)

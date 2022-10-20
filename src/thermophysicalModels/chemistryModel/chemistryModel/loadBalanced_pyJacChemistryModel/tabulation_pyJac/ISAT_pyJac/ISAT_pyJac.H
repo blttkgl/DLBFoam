@@ -72,7 +72,7 @@ class ISAT_pyJac
         Switch log_;
 
         //- Is reduction applied to the state vectors
-        const bool reduction_;
+        //const bool reduction_;
 
         //- List of the stored 'points' organised in a binary tree
         binaryTree_pyJac chemisTree_;
@@ -239,11 +239,13 @@ public:
         }
 
         //- Return true if reduction is applied to the state variables
+        /*
         bool reduction() const
         {
             return reduction_;
         }
-
+        */
+        //TODO: Add a warning for reduction incompatibility
         const odeChemistryModel& chemistry()
         {
             return chemistry_;

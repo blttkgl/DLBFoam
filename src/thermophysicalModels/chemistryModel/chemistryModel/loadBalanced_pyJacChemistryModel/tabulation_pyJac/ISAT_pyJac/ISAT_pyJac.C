@@ -57,7 +57,6 @@ Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::ISAT_pyJac
     coeffsDict_(chemistryProperties.subDict("tabulation")),
     chemistry_(chemistry),
     log_(coeffsDict_.lookupOrDefault<Switch>("log", false)),
-    reduction_(chemistry_.reduction()),
     chemisTree_(*this, coeffsDict_),
     scaleFactor_(chemistry.nEqns() + 1, 1),
     runTime_(chemistry.time()),
@@ -210,7 +209,7 @@ void Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::calcNewC
 )
 {
     const label nEqns = chemistry_.nEqns(); // Species, T, p
-    const List<label>& completeToSimplified = phi0->completeToSimplifiedIndex();
+    //const List<label>& completeToSimplified = phi0->completeToSimplifiedIndex();
 
     const scalarField dphi(phiq - phi0->phi());
     const scalarSquareMatrix& gradientsMatrix = phi0->A();
@@ -224,40 +223,12 @@ void Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::calcNewC
     Rphiq = phi0->Rphi();
     for (label i=0; i<nEqns - 2; i++)
     {
-        if (reduction_)
-        {
-            const label si = completeToSimplified[i];
 
-            if (si != -1)
-            {
-                // If specie is active, or T or p, then extrapolate using the
-                // gradients matrix
-                for (label j=0; j<nEqns + 1; j++)
-                {
-                    const label sj =
-                        j < nEqns - 2
-                      ? completeToSimplified[j]
-                      : j - (nEqns - 2) + phi0->nActive();
-
-                    if (sj != -1)
-                    {
-                        Rphiq[i] += gradientsMatrix(si, sj)*dphi[j];
-                    }
-                }
-            }
-            else
-            {
-                // If specie is inactive then use the tabulated value directly
-                Rphiq[i] += dphi[i];
-            }
-        }
-        else
+        // TODO: Add an error here that reduction is not supported
+        // Extrapolate using the gradients matrix
+        for (label j=0; j<nEqns + 1; j++)
         {
-            // Extrapolate using the gradients matrix
-            for (label j=0; j<nEqns + 1; j++)
-            {
-                Rphiq[i] += gradientsMatrix(i, j)*dphi[j];
-            }
+            Rphiq[i] += gradientsMatrix(i, j)*dphi[j];
         }
 
         // Clip
@@ -295,7 +266,7 @@ bool Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::grow
     {
         return phi0->grow(phiq);
     }
-    // The actual solution and the approximation given by ISAT are too different
+    // The actual solution and the approximation given by ISAT_pyJac are too different
     else
     {
         return false;

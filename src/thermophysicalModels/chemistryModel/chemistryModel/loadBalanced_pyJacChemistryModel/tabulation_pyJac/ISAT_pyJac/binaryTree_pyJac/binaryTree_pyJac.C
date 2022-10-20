@@ -31,7 +31,7 @@ License
 bool Foam::binaryTree_pyJac::inSubTree
 (
     const scalarField& phiq,
-    binaryTree_pyJac* y,
+    binaryNode_pyJac* y,
     chemPointISAT_pyJac* x
 )
 {
