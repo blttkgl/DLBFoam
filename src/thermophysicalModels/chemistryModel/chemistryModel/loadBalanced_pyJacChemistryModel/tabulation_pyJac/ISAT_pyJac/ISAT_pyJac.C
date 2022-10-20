@@ -49,7 +49,7 @@ Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::ISAT_pyJac
     const odeChemistryModel& chemistry
 )
 :
-    pyjacChemistryTabulationMethods
+    pyjacChemistryTabulationMethod
     (
         chemistryProperties,
         chemistry
