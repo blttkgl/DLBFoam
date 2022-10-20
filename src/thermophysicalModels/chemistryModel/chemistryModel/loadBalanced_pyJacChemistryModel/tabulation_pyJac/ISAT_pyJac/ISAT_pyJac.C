@@ -33,23 +33,23 @@ License
 
 namespace Foam
 {
-namespace pyjacChemistryTabulationMethods
+namespace chemistryTabulationMethods
 {
     defineTypeNameAndDebug(ISAT_pyJac, 0);
-    addToRunTimeSelectionTable(pyjacChemistryTabulationMethod, ISAT_pyJac, dictionary);
+    addToRunTimeSelectionTable(chemistryTabulationMethod, ISAT_pyJac, dictionary);
 }
 }
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::ISAT_pyJac
+Foam::chemistryTabulationMethods::ISAT_pyJac::ISAT_pyJac
 (
     const dictionary& chemistryProperties,
     const odeChemistryModel& chemistry
 )
 :
-    pyjacChemistryTabulationMethod
+    chemistryTabulationMethod
     (
         chemistryProperties,
         chemistry
@@ -148,13 +148,13 @@ Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::ISAT_pyJac
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
-Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::~ISAT_pyJac()
+Foam::chemistryTabulationMethods::ISAT_pyJac::~ISAT_pyJac()
 {}
 
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 
-void Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::addToMRU
+void Foam::chemistryTabulationMethods::ISAT_pyJac::addToMRU
 (
     chemPointISAT_pyJac* phi0
 )
@@ -201,7 +201,7 @@ void Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::addToMRU
 }
 
 
-void Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::calcNewC
+void Foam::chemistryTabulationMethods::ISAT_pyJac::calcNewC
 (
     chemPointISAT_pyJac* phi0,
     const scalarField& phiq,
@@ -237,7 +237,7 @@ void Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::calcNewC
 }
 
 
-bool Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::grow
+bool Foam::chemistryTabulationMethods::ISAT_pyJac::grow
 (
     chemPointISAT_pyJac* phi0,
     const scalarField& phiq,
@@ -274,7 +274,7 @@ bool Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::grow
 }
 
 
-bool Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::cleanAndBalance()
+bool Foam::chemistryTabulationMethods::ISAT_pyJac::cleanAndBalance()
 {
     bool treeModified(false);
 
@@ -317,7 +317,7 @@ bool Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::cleanAndBalance()
 }
 
 
-void Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::computeA
+void Foam::chemistryTabulationMethods::ISAT_pyJac::computeA
 (
     scalarSquareMatrix& A,
     const scalarField& Rphiq,
@@ -325,6 +325,53 @@ void Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::computeA
     const scalar dt
 )
 {
+    const label nSpecie = chemistry_.nSpecie();
+
+    scalarField Rphiqs(chemistry_.nEqns() + 1);
+    for (label i=0; i<nSpecie; i++)
+    {
+        const label si = chemistry_.sToc(i);
+        Rphiqs[i] = Rphiq[si];
+    }
+    Rphiqs[nSpecie] = Rphiq[Rphiq.size() - 3];
+    Rphiqs[nSpecie + 1] = Rphiq[Rphiq.size() - 2];
+    Rphiqs[nSpecie + 2] = Rphiq[Rphiq.size() - 1];
+
+    // Aaa is computed implicitly,
+    // A is given by A = C(psi0, t0+dt), where C is obtained through solving
+    // d/dt C(psi0, t) = J(psi(t))C(psi0, t)
+    // If we solve it implicitly:
+    // (C(psi0, t0+dt) - C(psi0, t0))/dt = J(psi(t0+dt))C(psi0, t0+dt)
+    // The Jacobian is thus computed according to the mapping
+    // C(psi0,t0+dt)*(I-dt*J(psi(t0+dt))) = C(psi0, t0)
+    // A = C(psi0,t0)/(I-dt*J(psi(t0+dt)))
+    // where C(psi0,t0) = I
+    scalarField dYTpdt(nSpecie + 2, Zero);
+    chemistry_.jacobian(runTime_.value(), Rphiqs, li, dYTpdt, A);
+
+    // Inverse of I - dt*J(psi(t0 + dt))
+    for (label i=0; i<nSpecie + 2; i++)
+    {
+        for (label j=0; j<nSpecie + 2; j++)
+        {
+            A(i, j) *= -dt;
+        }
+        A(i, i) += 1;
+    }
+    A(nSpecie + 2, nSpecie + 2) = 1;
+    LUscalarMatrix LUA(A);
+    LUA.inv(A);
+
+    // After inversion, lines of p and T are set to 0 except diagonal.  This
+    // avoid skewness of the ellipsoid of accuracy and potential issues in the
+    // binary tree.
+    for (label i=0; i<nSpecie; i++)
+    {
+        A(nSpecie, i) = 0;
+        A(nSpecie + 1, i) = 0;
+    }
+    Info<<"Here is a print statement from ISAT_pyJac"<<endl;
+    /*
     // Prepare the vector order for the pyJac version by alternating the T order in Rcq
     const label nSpecie = chemistry_.nSpecie() - 1; // Note the pyJac indexing
 
@@ -427,12 +474,13 @@ void Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::computeA
         A(nSpecie, i) = 0;
         A(nSpecie + 1, i) = 0;
     }
+    */
 }
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-bool Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::retrieve
+bool Foam::chemistryTabulationMethods::ISAT_pyJac::retrieve
 (
     const Foam::scalarField& phiq,
     scalarField& Rphiq
@@ -516,7 +564,7 @@ bool Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::retrieve
 }
 
 
-Foam::label Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::add
+Foam::label Foam::chemistryTabulationMethods::ISAT_pyJac::add
 (
     const scalarField& phiq,
     const scalarField& Rphiq,
@@ -625,7 +673,7 @@ Foam::label Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::add
         tolerance_,
         scaleFactor_.size(),
         nActive,
-        lastSearch_ // lastSearch_ may be nullptr (handled by binaryTree_pyJac)
+        lastSearch_ // lastSearch_ may be nullptr (handled by binaryTree_pyJac_pyJac)
     );
     if (lastSearch_ != nullptr)
     {
@@ -644,7 +692,7 @@ Foam::label Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::add
 }
 
 
-void Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::writePerformance()
+void Foam::chemistryTabulationMethods::ISAT_pyJac::writePerformance()
 {
     if (log_)
     {
@@ -682,7 +730,7 @@ void Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::writePerformance()
 }
 
 
-void Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::reset()
+void Foam::chemistryTabulationMethods::ISAT_pyJac::reset()
 {
     // Increment counter of time-step
     timeSteps_++;
@@ -694,7 +742,7 @@ void Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::reset()
 }
 
 
-bool Foam::pyjacChemistryTabulationMethods::ISAT_pyJac::update()
+bool Foam::chemistryTabulationMethods::ISAT_pyJac::update()
 {
     bool updated = cleanAndBalance();
     writePerformance();

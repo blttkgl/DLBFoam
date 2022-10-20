@@ -22,7 +22,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::pyjacChemistryTabulationMethods::ISAT_pyJac
+    Foam::chemistryTabulationMethods::ISAT_pyJac
 
 Description
     Implementation of the ISAT (In-situ adaptive tabulation), for chemistry
@@ -41,17 +41,16 @@ Description
 #ifndef ISAT_pyJac_H
 #define ISAT_pyJac_H
 
-#include "pyjacChemistryTabulationMethod.H"
+#include "chemistryTabulationMethod.H"
 #include "binaryTree_pyJac.H"
 #include "volFields.H"
 #include "OFstream.H"
 #include "cpuTime.H"
-
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
 {
-namespace pyjacChemistryTabulationMethods
+namespace chemistryTabulationMethods
 {
 
 /*---------------------------------------------------------------------------*\
@@ -60,7 +59,7 @@ namespace pyjacChemistryTabulationMethods
 
 class ISAT_pyJac
 :
-    public pyjacChemistryTabulationMethod
+    public chemistryTabulationMethod
 {
     // Private Data
 
@@ -298,7 +297,7 @@ public:
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-} // End namespace pyjacChemistryTabulationMethods
+} // End namespace chemistryTabulationMethods
 } // End namespace Foam
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

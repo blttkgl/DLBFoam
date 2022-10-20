@@ -135,7 +135,7 @@ namespace Foam
 
 class binaryNode_pyJac;
 
-namespace pyjacChemistryTabulationMethods
+namespace chemistryTabulationMethods
 {
     class ISAT_pyJac;
 }
@@ -150,7 +150,7 @@ class chemPointISAT_pyJac
     // Private Data
 
         //- Reference to the ISAT table
-        pyjacChemistryTabulationMethods::ISAT_pyJac& table_;
+        chemistryTabulationMethods::ISAT_pyJac& table_;
 
         //- Vector storing the composition, temperature and pressure
         //  and deltaT if a variable time step is set on
@@ -249,7 +249,7 @@ public:
         //- Construct from components
         chemPointISAT_pyJac
         (
-            pyjacChemistryTabulationMethods::ISAT_pyJac& table,
+            chemistryTabulationMethods::ISAT_pyJac& table,
             const scalarField& phi,
             const scalarField& Rphi,
             const scalarSquareMatrix& A,
@@ -275,7 +275,7 @@ public:
     // Member Functions
 
         //- Access to the ISAT table
-        inline const pyjacChemistryTabulationMethods::ISAT_pyJac& table() const;
+        inline const chemistryTabulationMethods::ISAT_pyJac& table() const;
 
         inline label nGrowth() const;
 

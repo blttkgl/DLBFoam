@@ -198,7 +198,7 @@ void Foam::chemPointISAT_pyJac::rotate
 
 Foam::chemPointISAT_pyJac::chemPointISAT_pyJac
 (
-    pyjacChemistryTabulationMethods::ISAT_pyJac& table,
+    chemistryTabulationMethods::ISAT_pyJac& table,
     const scalarField& phi,
     const scalarField& Rphi,
     const scalarSquareMatrix& A,

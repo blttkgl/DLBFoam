@@ -23,7 +23,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-inline const Foam::pyjacChemistryTabulationMethods::ISAT_pyJac&
+inline const Foam::chemistryTabulationMethods::ISAT_pyJac&
 Foam::chemPointISAT_pyJac::table() const
 {
     return table_;

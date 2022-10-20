@@ -136,7 +136,7 @@ bool Foam::binaryTree_pyJac::inSubTree
 
 Foam::binaryTree_pyJac::binaryTree_pyJac
 (
-    pyjacChemistryTabulationMethods::ISAT_pyJac& table,
+    chemistryTabulationMethods::ISAT_pyJac& table,
     dictionary coeffsDict
 )
 :

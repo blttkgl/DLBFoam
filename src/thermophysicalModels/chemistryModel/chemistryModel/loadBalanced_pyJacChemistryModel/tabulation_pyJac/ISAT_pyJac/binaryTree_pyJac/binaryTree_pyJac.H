@@ -60,7 +60,7 @@ class binaryTree_pyJac
     // Private Data
 
         //- Reference to the ISAT table
-        pyjacChemistryTabulationMethods::ISAT_pyJac& table_;
+        chemistryTabulationMethods::ISAT_pyJac& table_;
 
         //- Root node of the binary tree
         binaryNode_pyJac *root_;
@@ -121,7 +121,7 @@ public:
         //- Construct from dictionary and chemistryOnLineLibrary
         binaryTree_pyJac
         (
-            pyjacChemistryTabulationMethods::ISAT_pyJac& table,
+            chemistryTabulationMethods::ISAT_pyJac& table,
             dictionary coeffsDict
         );
 
