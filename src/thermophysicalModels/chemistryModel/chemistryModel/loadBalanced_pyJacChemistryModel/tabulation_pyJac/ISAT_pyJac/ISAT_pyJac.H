@@ -42,7 +42,7 @@ Description
 #define ISAT_pyJac_H
 
 #include "pyjacChemistryTabulationMethod.H"
-#include "binaryTree.H"
+#include "binaryTree_pyJac.H"
 #include "volFields.H"
 #include "OFstream.H"
 #include "cpuTime.H"
@@ -75,7 +75,7 @@ class ISAT_pyJac
         const bool reduction_;
 
         //- List of the stored 'points' organised in a binary tree
-        binaryTree chemisTree_;
+        binaryTree_pyJac chemisTree_;
 
         //- List of scale factors for species, temperature and pressure
         scalarField scaleFactor_;
@@ -104,13 +104,13 @@ class ISAT_pyJac
         Switch MRURetrieve_;
 
         //- Most Recently Used (MRU) list of chemPoint
-        SLList<chemPointISAT*> MRUList_;
+        SLList<chemPointISAT_pyJac*> MRUList_;
 
         //- Maximum size of the MRU list
         label maxMRUSize_;
 
-        //- Store a pointer to the last chemPointISAT found
-        chemPointISAT* lastSearch_;
+        //- Store a pointer to the last chemPointISAT_pyJac found
+        chemPointISAT_pyJac* lastSearch_;
 
         //- Switch to allow growth (on by default)
         Switch growPoints_;
@@ -153,7 +153,7 @@ class ISAT_pyJac
     // Private Member Functions
 
         //- Add a chemPoint to the MRU list
-        void addToMRU(chemPointISAT* phi0);
+        void addToMRU(chemPointISAT_pyJac* phi0);
 
         //- Compute and return the mapping of the composition phiq
         //  Input : phi0 the nearest chemPoint used in the linear interpolation
@@ -164,7 +164,7 @@ class ISAT_pyJac
         //  Rphiq = Rphi0 + A * (phiq-phi0)
         void calcNewC
         (
-            chemPointISAT* phi0,
+            chemPointISAT_pyJac* phi0,
             const scalarField& phiq,
             scalarField& Rphiq
         );
@@ -178,7 +178,7 @@ class ISAT_pyJac
         //  Output: true if phiq is in the EOA, false if not
         bool grow
         (
-            chemPointISAT* phi0,
+            chemPointISAT_pyJac* phi0,
             const scalarField& phiq,
             const scalarField& Rphiq
         );
@@ -249,7 +249,7 @@ public:
             return chemistry_;
         }
 
-        inline binaryTree& chemisTree()
+        inline binaryTree_pyJac& chemisTree()
         {
             return chemisTree_;
         }
