@@ -16,4 +16,12 @@ chemistrySolver/DLBnoChemistrySolvers.C
 chemistrySolver/DLBodeChemistrySolvers.C
 chemistrySolver/DLBodePyJacChemistrySolvers.C
 
+
+
+chemistryModel/loadBalanced_pyJacChemistryModel/tabulation_pyJac/pyjacChemistryTabulationMethod/pyjacChemistryTabulationMethod.C
+chemistryModel/loadBalanced_pyJacChemistryModel/tabulation_pyJac/pyjacChemistryTabulationMethod/pyjacChemistryTabulationMethodNew.C
+chemistryModel/loadBalanced_pyJacChemistryModel/tabulation_pyJac/noPyjacChemistryTabulation/noPyjacChemistryTabulation.C
+
+
+chemistryModel/loadBalanced_pyJacChemistryModel/tabulation_pyJac/ISAT_pyJac/ISAT_pyJac.C
 LIB = $(FOAM_USER_LIBBIN)/libchemistryModel_DLB
