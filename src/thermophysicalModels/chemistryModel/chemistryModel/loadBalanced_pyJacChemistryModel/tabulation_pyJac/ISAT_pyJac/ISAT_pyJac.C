@@ -58,7 +58,7 @@ Foam::chemistryTabulationMethods::ISAT_pyJac::ISAT_pyJac
     chemistry_(chemistry),
     log_(coeffsDict_.lookupOrDefault<Switch>("log", false)),
     chemisTree_(*this, coeffsDict_),
-    scaleFactor_(chemistry.nEqns() + 0, 1),
+    scaleFactor_(chemistry.nSpecie()+2, 1),
     runTime_(chemistry.time()),
     timeSteps_(0),
     chPMaxLifeTime_
@@ -208,7 +208,7 @@ void Foam::chemistryTabulationMethods::ISAT_pyJac::calcNewC
     scalarField& Rphiq
 )
 {
-    const label nEqns = chemistry_.nEqns(); // Species, T, p
+    const label nEqns = chemistry_.nSpecie() + 1; // Species-1, T, p
     //const List<label>& completeToSimplified = phi0->completeToSimplifiedIndex();
 
     const scalarField dphi(phiq - phi0->phi());
@@ -329,7 +329,7 @@ void Foam::chemistryTabulationMethods::ISAT_pyJac::computeA
     // Prepare the vector order for the pyJac version by alternating the T order in Rcq
     const label nSpecie = chemistry_.nSpecie() - 1; // Note the pyJac indexing
 
-    scalarField Rphiqs(chemistry_.nEqns() + 1);
+    scalarField Rphiqs(chemistry_.nSpecie()+1 + 1);
     for (label i=0; i<nSpecie; i++)
     {
         Rphiqs[i+1] = Rphiq[i];
@@ -352,7 +352,7 @@ void Foam::chemistryTabulationMethods::ISAT_pyJac::computeA
 
     // We need to take the pyJac-ordered Jacobian, and re-structure it back to the stock Jacobian,
     // so that we don't need to touch the retrieval part of the code
-    label ASize = chemistry_.nEqns() + 1;
+    label ASize = chemistry_.nSpecie() + 2;
     scalarSquareMatrix A_tmp(ASize,Zero);
 
     for (label i=0; i<nSpecie; i++)
@@ -612,7 +612,7 @@ Foam::label Foam::chemistryTabulationMethods::ISAT_pyJac::add
     }
 
     // Compute the A matrix needed to store the chemPoint.
-    const label ASize = chemistry_.nEqns() + 1;
+    const label ASize = chemistry_.nSpecie() + 2;
     scalarSquareMatrix A(ASize, Zero);
     computeA(A, Rphiq, li, deltaT);
 

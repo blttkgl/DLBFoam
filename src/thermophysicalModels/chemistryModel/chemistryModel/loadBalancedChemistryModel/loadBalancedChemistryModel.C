@@ -258,7 +258,7 @@ void Foam::loadBalancedChemistryModel<ThermoType>::solveSingle
                 phiq,
                 Rphiq,
                 this->nSpecie(),
-                solution.cellid,
+                problem.cellid,
                 problem.deltaT
             );
         }
@@ -489,7 +489,6 @@ bool Foam::loadBalancedChemistryModel<ThermoType>::retrieveProblem
     {
         phiq[i] = problem.c[i];
     }
-    // Note the modified indexing due to pyJac
     phiq[this->nSpecie()] = problem.Ti;
     phiq[this->nSpecie() + 1] = problem.pi;
     phiq[this->nSpecie() + 2] = problem.deltaT;

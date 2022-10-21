@@ -182,7 +182,7 @@ bool Foam::loadBalanced_pyJacChemistryModel<ThermoType>::retrieveProblem
     {
         phiq[i] = problem.c[i];
     }
-    // Note the modified indexing due to pyJac
+    // Note the modified indexing due to pyJac, last specie is omitted
     phiq[this->nSpecie()-1] = problem.Ti;
     phiq[this->nSpecie()] = problem.pi;
     phiq[this->nSpecie() + 1] = problem.deltaT;
