@@ -109,6 +109,9 @@ private:
         //- Update the reaction rates from a list of solutions
         scalar updateReactionRates(const RecvBuffer<ChemistrySolution>& solutions);
 
+        //- Try to retrieve the candidate problem from the ISAT tree
+        virtual bool retrieveProblem(ChemistryProblem& problem, scalarField& phiq, scalarField& Rphiq) const;
+
         //- Solve the reaction system for the given time step
         //  of given type and return the characteristic time
         template<class DeltaTType>
@@ -156,7 +159,7 @@ public:
             //- Solve the reaction system for the given time step
             //  and return the characteristic time
             virtual scalar solve(const scalarField& deltaT) override;
-
+        
         // ODE functions (overriding abstract functions in ODE.H)
         virtual void solve
         (

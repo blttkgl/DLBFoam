@@ -58,7 +58,7 @@ Foam::chemistryTabulationMethods::ISAT_pyJac::ISAT_pyJac
     chemistry_(chemistry),
     log_(coeffsDict_.lookupOrDefault<Switch>("log", false)),
     chemisTree_(*this, coeffsDict_),
-    scaleFactor_(chemistry.nEqns() + 1, 1),
+    scaleFactor_(chemistry.nEqns() + 0, 1),
     runTime_(chemistry.time()),
     timeSteps_(0),
     chPMaxLifeTime_
@@ -134,10 +134,10 @@ Foam::chemistryTabulationMethods::ISAT_pyJac::ISAT_pyJac
 
     if (log_)
     {
-        nRetrievedFile_ = chemistry.logFile("found_ISAT_pyJac.out");
-        nGrowthFile_ = chemistry.logFile("growth_ISAT_pyJac.out");
-        nAddFile_ = chemistry.logFile("add_ISAT_pyJac.out");
-        sizeFile_ = chemistry.logFile("size_ISAT_pyJac.out");
+        nRetrievedFile_ = chemistry.logFile("found_isat_pyJac.out");
+        nGrowthFile_ = chemistry.logFile("growth_isat_pyJac.out");
+        nAddFile_ = chemistry.logFile("add_isat_pyJac.out");
+        sizeFile_ = chemistry.logFile("size_isat_pyJac.out");
 
         cpuAddFile_ = chemistry.logFile("cpu_add.out");
         cpuGrowFile_ = chemistry.logFile("cpu_grow.out");
@@ -325,53 +325,7 @@ void Foam::chemistryTabulationMethods::ISAT_pyJac::computeA
     const scalar dt
 )
 {
-    const label nSpecie = chemistry_.nSpecie();
-
-    scalarField Rphiqs(chemistry_.nEqns() + 1);
-    for (label i=0; i<nSpecie; i++)
-    {
-        const label si = chemistry_.sToc(i);
-        Rphiqs[i] = Rphiq[si];
-    }
-    Rphiqs[nSpecie] = Rphiq[Rphiq.size() - 3];
-    Rphiqs[nSpecie + 1] = Rphiq[Rphiq.size() - 2];
-    Rphiqs[nSpecie + 2] = Rphiq[Rphiq.size() - 1];
-
-    // Aaa is computed implicitly,
-    // A is given by A = C(psi0, t0+dt), where C is obtained through solving
-    // d/dt C(psi0, t) = J(psi(t))C(psi0, t)
-    // If we solve it implicitly:
-    // (C(psi0, t0+dt) - C(psi0, t0))/dt = J(psi(t0+dt))C(psi0, t0+dt)
-    // The Jacobian is thus computed according to the mapping
-    // C(psi0,t0+dt)*(I-dt*J(psi(t0+dt))) = C(psi0, t0)
-    // A = C(psi0,t0)/(I-dt*J(psi(t0+dt)))
-    // where C(psi0,t0) = I
-    scalarField dYTpdt(nSpecie + 2, Zero);
-    chemistry_.jacobian(runTime_.value(), Rphiqs, li, dYTpdt, A);
-
-    // Inverse of I - dt*J(psi(t0 + dt))
-    for (label i=0; i<nSpecie + 2; i++)
-    {
-        for (label j=0; j<nSpecie + 2; j++)
-        {
-            A(i, j) *= -dt;
-        }
-        A(i, i) += 1;
-    }
-    A(nSpecie + 2, nSpecie + 2) = 1;
-    LUscalarMatrix LUA(A);
-    LUA.inv(A);
-
-    // After inversion, lines of p and T are set to 0 except diagonal.  This
-    // avoid skewness of the ellipsoid of accuracy and potential issues in the
-    // binary tree.
-    for (label i=0; i<nSpecie; i++)
-    {
-        A(nSpecie, i) = 0;
-        A(nSpecie + 1, i) = 0;
-    }
-    Info<<"Here is a print statement from ISAT_pyJac"<<endl;
-    /*
+    
     // Prepare the vector order for the pyJac version by alternating the T order in Rcq
     const label nSpecie = chemistry_.nSpecie() - 1; // Note the pyJac indexing
 
@@ -408,7 +362,6 @@ void Foam::chemistryTabulationMethods::ISAT_pyJac::computeA
             A_tmp(i,j) = A(i+1,j+1);
         }
     }
-
     for (label i=0; i<nSpecie; i++)
     {
         A_tmp(nSpecie,i) = A(0,i+1);
@@ -462,7 +415,7 @@ void Foam::chemistryTabulationMethods::ISAT_pyJac::computeA
 
     A(nSpecie + 1, nSpecie + 1) = -dt*A(nSpecie + 1, nSpecie + 1) + 1;
     A(nSpecie + 2, nSpecie + 2) = 1;
-    
+
     LUscalarMatrix LUA(A);
     LUA.inv(A);
 
@@ -474,7 +427,6 @@ void Foam::chemistryTabulationMethods::ISAT_pyJac::computeA
         A(nSpecie, i) = 0;
         A(nSpecie + 1, i) = 0;
     }
-    */
 }
 
 

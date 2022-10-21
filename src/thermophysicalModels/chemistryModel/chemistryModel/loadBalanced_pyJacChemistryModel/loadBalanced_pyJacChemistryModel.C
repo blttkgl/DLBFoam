@@ -172,6 +172,36 @@ loadBalanced_pyJacChemistryModel<ThermoType>::Qdot() const {
 }
 
 
+template <class ThermoType>
+bool Foam::loadBalanced_pyJacChemistryModel<ThermoType>::retrieveProblem 
+(
+    ChemistryProblem& problem, scalarField& phiq, scalarField& Rphiq
+) const
+{
+    for (label i=0; i<this->nSpecie(); i++)
+    {
+        phiq[i] = problem.c[i];
+    }
+    // Note the modified indexing due to pyJac
+    phiq[this->nSpecie()-1] = problem.Ti;
+    phiq[this->nSpecie()] = problem.pi;
+    phiq[this->nSpecie() + 1] = problem.deltaT;
+    if(this->tabulation().retrieve(phiq,Rphiq))
+    {
+        // Retrieved solution stored in Rphiq
+        label csum = 0.0;
+        for (label i=0; i<this->nSpecie()-1; i++)
+        { 
+            problem.c[i] = Rphiq[i];        
+        }
+        problem.c[this->nSpecie()-1] = 1.0 - csum;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
 
 
 } // namespace Foam

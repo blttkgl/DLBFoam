@@ -79,7 +79,7 @@ public:
     loadBalanced_pyJacChemistryModel(const loadBalanced_pyJacChemistryModel&);
 
     inline virtual label nEqns() const;
-
+    
     //- Override jacobian and derivatives function from chemistryModel
     virtual void jacobian(const scalar        t,
                           const scalarField&  c,
@@ -94,6 +94,8 @@ public:
 
     //- Override Qdot function from chemistryModel for using pyJac's enthalpy of formation
     virtual tmp<volScalarField> Qdot() const override;
+
+    bool retrieveProblem(ChemistryProblem& problem, scalarField& phiq, scalarField& Rphiq) const;
 
 private:
     //- Temporary concentration field

@@ -223,27 +223,11 @@ void Foam::loadBalancedChemistryModel<ThermoType>::solveSingle
     // Timer begins
     clockTime time;
     time.timeIncrement();
-
     // Composition vector (Yi, T, p, deltaT)
     scalarField phiq(this->nEqns() + 1);
     scalarField Rphiq(this->nEqns() + 1);
-    for (label i=0; i<this->nSpecie(); i++)
-    {
-        phiq[i] = problem.c[i];
-    }
-    phiq[this->nSpecie()] = problem.Ti;
-    phiq[this->nSpecie() + 1] = problem.pi;
-    phiq[this->nSpecie() + 2] = problem.deltaT;
-
-    if(this->tabulation().retrieve(phiq,Rphiq))
-    {
-        // Retrieved solution stored in Rphiq
-        for (label i=0; i<this->nSpecie(); i++)
-        { 
-            problem.c[i] = Rphiq[i];        
-        }
-    }
-    else
+    bool retrieve = retrieveProblem(problem, phiq, Rphiq);
+    if(!retrieve)
     {
         // Calculate the chemical source terms
         while(timeLeft > small)
@@ -493,3 +477,36 @@ void Foam::loadBalancedChemistryModel<ThermoType>::updateReactionRate
     }
     this->deltaTChem_[i] = min(solution.deltaTChem, this->deltaTChemMax_);
 }
+
+
+template <class ThermoType>
+bool Foam::loadBalancedChemistryModel<ThermoType>::retrieveProblem 
+(
+    ChemistryProblem& problem, scalarField& phiq, scalarField& Rphiq
+) const
+{
+    for (label i=0; i<this->nSpecie(); i++)
+    {
+        phiq[i] = problem.c[i];
+    }
+    // Note the modified indexing due to pyJac
+    phiq[this->nSpecie()] = problem.Ti;
+    phiq[this->nSpecie() + 1] = problem.pi;
+    phiq[this->nSpecie() + 2] = problem.deltaT;
+
+    if(this->tabulation().retrieve(phiq,Rphiq))
+    {
+        // Retrieved solution stored in Rphiq
+        for (label i=0; i<this->nSpecie(); i++)
+        { 
+            problem.c[i] = Rphiq[i];        
+        }
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+
