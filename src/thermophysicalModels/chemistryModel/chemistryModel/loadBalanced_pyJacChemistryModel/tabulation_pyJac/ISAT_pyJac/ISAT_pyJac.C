@@ -329,7 +329,7 @@ void Foam::chemistryTabulationMethods::ISAT_pyJac::computeA
     // Prepare the vector order for the pyJac version by alternating the T order in Rcq
     const label nSpecie = chemistry_.nSpecie() - 1; // Note the pyJac indexing
 
-    scalarField Rphiqs(chemistry_.nSpecie()+1 + 1);
+    scalarField Rphiqs(chemistry_.nSpecie()+2);
     for (label i=0; i<nSpecie; i++)
     {
         Rphiqs[i+1] = Rphiq[i];

@@ -178,7 +178,7 @@ bool Foam::loadBalanced_pyJacChemistryModel<ThermoType>::retrieveProblem
     ChemistryProblem& problem, scalarField& phiq, scalarField& Rphiq
 ) const
 {
-    for (label i=0; i<this->nSpecie(); i++)
+    for (label i=0; i<this->nSpecie()-1; i++)
     {
         phiq[i] = problem.c[i];
     }
@@ -189,10 +189,11 @@ bool Foam::loadBalanced_pyJacChemistryModel<ThermoType>::retrieveProblem
     if(this->tabulation().retrieve(phiq,Rphiq))
     {
         // Retrieved solution stored in Rphiq
-        label csum = 0.0;
+        scalar csum = 0.0;
         for (label i=0; i<this->nSpecie()-1; i++)
         { 
             problem.c[i] = Rphiq[i];        
+            csum+= Rphiq[i];
         }
         problem.c[this->nSpecie()-1] = 1.0 - csum;
         return true;
