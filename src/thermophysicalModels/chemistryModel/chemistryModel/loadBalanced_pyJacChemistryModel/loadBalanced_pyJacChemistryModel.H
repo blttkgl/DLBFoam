@@ -95,7 +95,6 @@ public:
     //- Override Qdot function from chemistryModel for using pyJac's enthalpy of formation
     virtual tmp<volScalarField> Qdot() const override;
 
-    bool retrieveProblem(ChemistryProblem& problem, scalarField& phiq, scalarField& Rphiq) const;
 
 private:
     //- Temporary concentration field

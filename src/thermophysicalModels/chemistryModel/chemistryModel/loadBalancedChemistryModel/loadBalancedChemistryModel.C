@@ -242,26 +242,7 @@ void Foam::loadBalancedChemistryModel<ThermoType>::solveSingle
                 problem.deltaTChem);
             timeLeft -= dt;
         }
-        if (this->tabulation().tabulates())
-        {
-
-            for (label i=0; i<this->nSpecie(); i++)
-            {
-                Rphiq[i] = problem.c[i];
-            }
-            Rphiq[Rphiq.size()-3] = problem.Ti;
-            Rphiq[Rphiq.size()-2] = problem.pi;
-            Rphiq[Rphiq.size()-1] = problem.deltaT;
-            
-            this->tabulation().add
-            (
-                phiq,
-                Rphiq,
-                this->nSpecie(),
-                problem.cellid,
-                problem.deltaT
-            );
-        }
+        tabulateProblem(problem, phiq, Rphiq);
     }
 
     solution.deltaTChem = min(problem.deltaTChem, this->deltaTChemMax_);
@@ -485,20 +466,26 @@ bool Foam::loadBalancedChemistryModel<ThermoType>::retrieveProblem
     ChemistryProblem& problem, scalarField& phiq, scalarField& Rphiq
 ) const
 {
-    for (label i=0; i<this->nSpecie(); i++)
+    for (label i=0; i<this->nEqns()-2; i++)
     {
         phiq[i] = problem.c[i];
     }
-    phiq[this->nSpecie()] = problem.Ti;
-    phiq[this->nSpecie() + 1] = problem.pi;
-    phiq[this->nSpecie() + 2] = problem.deltaT;
+    phiq[phiq.size()-3] = problem.Ti;
+    phiq[phiq.size()-2] = problem.pi;
+    phiq[phiq.size()-1] = problem.deltaT;
 
     if(this->tabulation().retrieve(phiq,Rphiq))
     {
         // Retrieved solution stored in Rphiq
-        for (label i=0; i<this->nSpecie(); i++)
+        scalar csum = 0.0;
+        for (label i=0; i<this->nEqns()-2; i++)
         { 
             problem.c[i] = Rphiq[i];        
+            csum+=Rphiq[i];
+        }
+        if(this->nEqns() == this->nSpecie()+1)
+        {
+            problem.c[this->nSpecie()-1] = 1.0-csum;
         }
         return true;
     }
@@ -507,5 +494,30 @@ bool Foam::loadBalancedChemistryModel<ThermoType>::retrieveProblem
         return false;
     }
 }
+template <class ThermoType>
+void Foam::loadBalancedChemistryModel<ThermoType>::tabulateProblem 
+(
+    ChemistryProblem& problem, scalarField& phiq, scalarField& Rphiq
+) const
+{
+    if (this->tabulation().tabulates())
+    {
 
-
+        for (label i=0; i<this->nEqns()-2; i++)
+        {
+            Rphiq[i] = problem.c[i];
+        }
+        Rphiq[Rphiq.size()-3] = problem.Ti;
+        Rphiq[Rphiq.size()-2] = problem.pi;
+        Rphiq[Rphiq.size()-1] = problem.deltaT;
+        
+        this->tabulation().add
+        (
+            phiq,
+            Rphiq,
+            this->nSpecie(),   // TODO: What should be the value here, when we have the pyJac array Nsp-1+T+p???
+            problem.cellid,
+            problem.deltaT
+        );
+    }
+}
