@@ -70,9 +70,6 @@ class ISAT_pyJac
         //- Switch to select performance logging
         Switch log_;
 
-        //- Is reduction applied to the state vectors
-        //const bool reduction_;
-
         //- List of the stored 'points' organised in a binary tree
         binaryTree_pyJac chemisTree_;
 

@@ -184,10 +184,6 @@ class chemPointISAT_pyJac
         //- Number of active species stored in the chemPoint
         label nActive_;
 
-        //- Vectors that store the index conversion between the simplified
-        //  and the complete chemical mechanism
-        List<label> simplifiedToCompleteIndex_;
-
         label timeTag_;
         label lastTimeUsed_;
 
@@ -205,7 +201,6 @@ class chemPointISAT_pyJac
         //   to still live according to the maxChPLifeTime_ parameter
         label nLifeTime_;
 
-        List<label> completeToSimplifiedIndex_;
 
         label idT_;
         label idp_;
@@ -305,10 +300,6 @@ public:
 
         inline label nActive() const;
 
-        inline const List<label>& completeToSimplifiedIndex() const;
-
-        inline const List<label>& simplifiedToCompleteIndex() const;
-
         //- Increases the number of retrieves the chempoint has generated
         inline void increaseNumRetrieve();
 
@@ -317,8 +308,6 @@ public:
 
         //- Increases the "counter" of the chP life
         inline void increaseNLifeTime();
-
-        inline label simplifiedToCompleteIndex(const label i);
 
         inline const label& timeTag();
 

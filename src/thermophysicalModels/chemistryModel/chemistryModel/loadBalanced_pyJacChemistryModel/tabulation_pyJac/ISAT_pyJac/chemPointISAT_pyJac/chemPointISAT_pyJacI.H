@@ -114,18 +114,6 @@ inline Foam::label Foam::chemPointISAT_pyJac::nActive() const
 }
 
 
-inline const Foam::List<Foam::label>&
-Foam::chemPointISAT_pyJac::completeToSimplifiedIndex() const
-{
-    return completeToSimplifiedIndex_;
-}
-
-
-inline const Foam::List<Foam::label>&
-Foam::chemPointISAT_pyJac::simplifiedToCompleteIndex() const
-{
-    return simplifiedToCompleteIndex_;
-}
 
 
 inline void Foam::chemPointISAT_pyJac::increaseNumRetrieve()
@@ -146,32 +134,6 @@ inline void Foam::chemPointISAT_pyJac::increaseNLifeTime()
 }
 
 
-inline Foam::label Foam::chemPointISAT_pyJac::simplifiedToCompleteIndex
-(
-    const label i
-)
-{
-    if (i < nActive_)
-    {
-        return simplifiedToCompleteIndex_[i];
-    }
-    else if (i == nActive_)
-    {
-        return completeSpaceSize_ - 3;
-    }
-    else if (i == nActive_ + 1)
-    {
-        return completeSpaceSize_ - 2;
-    }
-    else if (i == nActive_ + 2)
-    {
-        return completeSpaceSize_ - 1;
-    }
-    else
-    {
-        return -1;
-    }
-}
 
 
 inline const Foam::label& Foam::chemPointISAT_pyJac::timeTag()

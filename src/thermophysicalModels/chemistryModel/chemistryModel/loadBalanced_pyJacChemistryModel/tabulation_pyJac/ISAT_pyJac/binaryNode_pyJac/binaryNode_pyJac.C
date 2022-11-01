@@ -24,7 +24,7 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "binaryNode_pyJac.H"
-#include "ISAT.H"
+#include "ISAT_pyJac.H"
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
@@ -68,61 +68,26 @@ void Foam::binaryNode_pyJac::calcV
 {
     // LT is the transpose of the L matrix
     const scalarSquareMatrix& LT = elementLeft.LT();
-    //const bool reduction = elementLeft.table().reduction();
+    const bool reduction = false;//elementLeft.table().reduction();
 
     // Difference of composition in the full species domain
     const scalarField& phil(elementLeft.phi());
     const scalarField& phir(elementRight.phi());
     const scalarField& scaleFactor(elementLeft.scaleFactor());
     const scalar epsTol = elementLeft.tolerance();
-
     // v = LT.T()*LT*(phir - phil)
     for (label i=0; i<elementLeft.completeSpaceSize(); i++)
     {
         label si = i;
         bool outOfIndexI = true;
-        
-        /*
-        if (reduction)
-        {
-            if (i<elementLeft.completeSpaceSize() - 3)
-            {
-                si = elementLeft.completeToSimplifiedIndex()[i];
-                outOfIndexI = (si == -1);
-            }
-            else // temperature and pressure
-            {
-                outOfIndexI = false;
-                const label dif = i - (elementLeft.completeSpaceSize() - 3);
-                si = elementLeft.nActive() + dif;
-            }
-        }
-        */
-        if (true)
+        if (!reduction || (reduction && !(outOfIndexI)))
         {
             v[i] = 0;
             for (label j=0; j<elementLeft.completeSpaceSize(); j++)
             {
                 label sj = j;
                 bool outOfIndexJ = true;
-                /*
-                if (reduction)
-                {
-                    if (j < elementLeft.completeSpaceSize() - 3)
-                    {
-                        sj = elementLeft.completeToSimplifiedIndex()[j];
-                        outOfIndexJ = (sj==-1);
-                    }
-                    else
-                    {
-                        outOfIndexJ = false;
-                        const label dif =
-                            j - (elementLeft.completeSpaceSize() - 3);
-                        sj = elementLeft.nActive() + dif;
-                    }
-                }
-                */
-                if (true)//(!reduction ||(reduction && !(outOfIndexJ)))
+                if (!reduction ||(reduction && !(outOfIndexJ)))
                 {
                     // Since L is a lower triangular matrix k=0->min(i, j)
                     for (label k=0; k<=min(si, sj); k++)

@@ -58,7 +58,7 @@ Foam::chemistryTabulationMethods::ISAT_pyJac::ISAT_pyJac
     chemistry_(chemistry),
     log_(coeffsDict_.lookupOrDefault<Switch>("log", false)),
     chemisTree_(*this, coeffsDict_),
-    scaleFactor_(chemistry.nSpecie()+2, 1),
+    scaleFactor_(chemistry.nSpecie()+2, 1), // Change the scalefactor for Nsp-1 + T + p + deltaT 
     runTime_(chemistry.time()),
     timeSteps_(0),
     chPMaxLifeTime_
@@ -208,8 +208,7 @@ void Foam::chemistryTabulationMethods::ISAT_pyJac::calcNewC
     scalarField& Rphiq
 )
 {
-    const label nEqns = chemistry_.nSpecie() + 1; // Species-1, T, p
-    //const List<label>& completeToSimplified = phi0->completeToSimplifiedIndex();
+    const label nEqns = chemistry_.nSpecie() + 1; // Species-1, T, p, does that make sense?
 
     const scalarField dphi(phiq - phi0->phi());
     const scalarSquareMatrix& gradientsMatrix = phi0->A();
@@ -389,33 +388,15 @@ void Foam::chemistryTabulationMethods::ISAT_pyJac::computeA
     }
 
     // Inverse of I - dt*J(psi(t0 + dt))
-    for (label i=0; i<nSpecie ; i++)
+    for (label i=0; i<nSpecie + 2 ; i++)
     {
-        for (label j=0; j<nSpecie; j++)
+        for (label j=0; j<nSpecie + 2; j++)
         {
             A(i, j) *= -dt;
         }
         A(i, i) += 1;
-        // Columns for pressure and temperature
-        A(i, nSpecie) *= -dt;
-        A(i, nSpecie+1) *= -dt;
     }
-    // For the temperature and pressure lines, ddc(dTdt)
-    // should be converted in ddY(dTdt)
-
-    //Note that previously temperature and pressure rows were not multiplied by dt
-
-    for (label i=0; i<nSpecie; i++)
-    {
-        A(nSpecie, i) *= -dt;
-        A(nSpecie + 1, i) *= -dt;
-    }
-
-    A(nSpecie, nSpecie) = -dt*A(nSpecie, nSpecie) + 1;
-
-    A(nSpecie + 1, nSpecie + 1) = -dt*A(nSpecie + 1, nSpecie + 1) + 1;
     A(nSpecie + 2, nSpecie + 2) = 1;
-
     LUscalarMatrix LUA(A);
     LUA.inv(A);
 

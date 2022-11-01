@@ -483,7 +483,7 @@ bool Foam::loadBalancedChemistryModel<ThermoType>::retrieveProblem
             problem.c[i] = Rphiq[i];        
             csum+=Rphiq[i];
         }
-        if(this->nEqns() == this->nSpecie()+1)
+        if(this->nEqns() == this->nSpecie()+1)      // check if you are operating with pyJac solver (nEqns=nSpecie+1)
         {
             problem.c[this->nSpecie()-1] = 1.0-csum;
         }
@@ -515,7 +515,7 @@ void Foam::loadBalancedChemistryModel<ThermoType>::tabulateProblem
         (
             phiq,
             Rphiq,
-            this->nSpecie(),   // TODO: What should be the value here, when we have the pyJac array Nsp-1+T+p???
+            this->nEqns()-2,   // TODO: What should be the value here, when we have the pyJac array Nsp-1+T+p???
             problem.cellid,
             problem.deltaT
         );

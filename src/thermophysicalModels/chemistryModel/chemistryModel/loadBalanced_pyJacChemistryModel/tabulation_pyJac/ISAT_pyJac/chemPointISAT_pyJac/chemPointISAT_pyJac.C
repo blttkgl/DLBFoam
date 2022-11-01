@@ -234,25 +234,7 @@ Foam::chemPointISAT_pyJac::chemPointISAT_pyJac
 
     idT_ = completeSpaceSize - 3;
     idp_ = completeSpaceSize - 2;
-    /*
-    if (table_.reduction())
-    {
-        simplifiedToCompleteIndex_.setSize(nActive_);
-        completeToSimplifiedIndex_.setSize(completeSpaceSize - 3);
 
-        forAll(completeToSimplifiedIndex_, i)
-        {
-            completeToSimplifiedIndex_[i] = table_.chemistry().cTos(i);
-        }
-
-        forAll(simplifiedToCompleteIndex_, i)
-        {
-            simplifiedToCompleteIndex_[i] = table_.chemistry().sToc(i);
-        }
-    }
-    */
-    //const label reduOrCompDim =
-    //    table_.reduction() ? nActive_ + 3 : completeSpaceSize;
     const label reduOrCompDim = completeSpaceSize;
     // SVD decomposition A = U*D*V^T
     SVD svdA(A);
@@ -277,13 +259,6 @@ Foam::chemPointISAT_pyJac::chemPointISAT_pyJac
         for (label j=0; j<reduOrCompDim; j++)
         {
             label compi = i;
-            /*
-            if (table_.reduction())
-            {
-                compi = simplifiedToCompleteIndex(i);
-            }
-            */
-
             // SF*A/tolerance
             // (where SF is diagonal with inverse of scale factors)
             // SF*A is the same as dividing each line by the scale factor
@@ -316,14 +291,12 @@ Foam::chemPointISAT_pyJac::chemPointISAT_pyJac
     completeSpaceSize_(p.completeSpaceSize()),
     nGrowth_(p.nGrowth()),
     nActive_(p.nActive()),
-    simplifiedToCompleteIndex_(p.simplifiedToCompleteIndex()),
     timeTag_(p.timeTag()),
     lastTimeUsed_(p.lastTimeUsed()),
     toRemove_(p.toRemove()),
     maxNumNewDim_(p.maxNumNewDim()),
     numRetrieve_(0),
-    nLifeTime_(0),
-    completeToSimplifiedIndex_(p.completeToSimplifiedIndex())
+    nLifeTime_(0)
 {
     tolerance_ = p.tolerance();
 
@@ -338,7 +311,6 @@ Foam::chemPointISAT_pyJac::chemPointISAT_pyJac
 bool Foam::chemPointISAT_pyJac::inEOA(const scalarField& phiq)
 {
     const scalarField dphi(phiq - phi());
-
     const label dim = completeSpaceSize() - 3;
 
     scalar epsTemp = 0;
@@ -351,24 +323,13 @@ bool Foam::chemPointISAT_pyJac::inEOA(const scalarField& phiq)
         // When mechanism reduction is inactive OR on active species multiply L
         // by dphi to get the distance in the active species direction else (for
         // inactive species), just multiply the diagonal element and dphi
-        /*
-        if
-        (
-            !(table_.reduction())
-          ||(table_.reduction() && completeToSimplifiedIndex_[i] != -1)
-        )
+        if(true)
         {
-            const label si =
-                table_.reduction()
-              ? completeToSimplifiedIndex_[i]
-              : i;
+            const label si = i;
 
             for (label j=si; j<dim; j++)// LT is upper triangular
             {
-                const label sj =
-                    table_.reduction()
-                  ? simplifiedToCompleteIndex_[j]
-                  : j;
+                const label sj = j;
 
                 temp += LT_(si, j)*dphi[sj];
             }
@@ -377,11 +338,10 @@ bool Foam::chemPointISAT_pyJac::inEOA(const scalarField& phiq)
             temp += LT_(si, dim+1)*dphi[idp_];
             temp += LT_(si, dim+2)*dphi[iddeltaT_];
         }
-        */
-        //else
-        //{
+        else
+        {
             temp = dphi[i]/(tolerance_*scaleFactor_[i]);
-        //}
+        }
 
         epsTemp += sqr(temp);
 
@@ -390,7 +350,6 @@ bool Foam::chemPointISAT_pyJac::inEOA(const scalarField& phiq)
             propEps[i] = temp;
         }
     }
-
     // Temperature
     epsTemp +=
         sqr
@@ -488,43 +447,17 @@ bool Foam::chemPointISAT_pyJac::checkSolution
     const scalarSquareMatrix& Avar(A());
     scalar dRl = 0;
 
-    const label dim = completeSpaceSize() - 2;
-
     // Since we build only the solution for the species, T and p are not
     // included
     for (label i=0; i<completeSpaceSize()-3; i++)
     {
         dRl = 0;
-        /*
-        if (table_.reduction())
+     
+        for (label j=0; j<completeSpaceSize(); j++)
         {
-            const label si = completeToSimplifiedIndex_[i];
-
-            // If this species is active
-            if (si != -1)
-            {
-                for (label j=0; j<dim; j++)
-                {
-                    const label sj = simplifiedToCompleteIndex_[j];
-                    dRl += Avar(si, j)*dphi[sj];
-                }
-                dRl += Avar(si, nActive_)*dphi[idT_];
-                dRl += Avar(si, nActive_+1)*dphi[idp_];
-                dRl += Avar(si, nActive_+2)*dphi[iddeltaT_];
-            }
-            else
-            {
-                dRl = dphi[i];
-            }
+            dRl += Avar(i, j)*dphi[j];
         }
-        */
-        //else
-        //{
-            for (label j=0; j<completeSpaceSize(); j++)
-            {
-                dRl += Avar(i, j)*dphi[j];
-            }
-        //}
+    
         eps2 += sqr((dR[i]-dRl)/scaleFactorV[i]);
     }
 
@@ -544,131 +477,6 @@ bool Foam::chemPointISAT_pyJac::checkSolution
 bool Foam::chemPointISAT_pyJac::grow(const scalarField& phiq)
 {
     const scalarField dphi(phiq - phi());
-    const label initNActiveSpecies(nActive_);
-    /*
-    if (table_.reduction())
-    {
-        label activeAdded(0);
-        DynamicList<label> dimToAdd(0);
-
-        // check if the difference of active species is lower than the maximum
-        // number of new dimensions allowed
-        for (label i=0; i<completeSpaceSize()-3; i++)
-        {
-            // first test if the current chemPoint has an inactive species
-            // corresponding to an active one in the query point
-            if
-            (
-                completeToSimplifiedIndex_[i] == -1
-             && table_.chemistry().cTos(i) != -1
-            )
-            {
-                activeAdded++;
-                dimToAdd.append(i);
-            }
-            // then test if an active species in the current chemPoint
-            // corresponds to an inactive on the query side
-            if
-            (
-                completeToSimplifiedIndex_[i] != -1
-             && table_.chemistry().cTos(i) == -1
-            )
-            {
-                activeAdded++;
-                // we don't need to add a new dimension but we count it to have
-                // control on the difference through maxNumNewDim
-            }
-            // finally test if both points have inactive species but
-            // with a dphi!=0
-            if
-            (
-                completeToSimplifiedIndex_[i] == -1
-             && table_.chemistry().cTos(i) == -1
-             && dphi[i] != 0
-            )
-            {
-                activeAdded++;
-                dimToAdd.append(i);
-            }
-        }
-
-        // if the number of added dimension is too large, growth fail
-        if (activeAdded > maxNumNewDim_)
-        {
-            return false;
-        }
-
-        // the number of added dimension to the current chemPoint
-        nActive_ += dimToAdd.size();
-        simplifiedToCompleteIndex_.setSize(nActive_);
-        forAll(dimToAdd, i)
-        {
-            label si = nActive_ - dimToAdd.size() + i;
-            // add the new active species
-            simplifiedToCompleteIndex_[si] = dimToAdd[i];
-            completeToSimplifiedIndex_[dimToAdd[i]] = si;
-        }
-
-        // update LT and A :
-        //-add new column and line for the new active species
-        //-transfer last two lines of the previous matrix (p and T) to the end
-        //  (change the diagonal position)
-        //-set all element of the new lines and columns to zero except diagonal
-        //  (=1/(tolerance*scaleFactor))
-        if (nActive_ > initNActiveSpecies)
-        {
-            const scalarSquareMatrix LTvar = LT_; // take a copy of LT_
-            const scalarSquareMatrix Avar = A_; // take a copy of A_
-            LT_ = scalarSquareMatrix(nActive_+3, Zero);
-            A_ = scalarSquareMatrix(nActive_+3, Zero);
-
-            // write the initial active species
-            for (label i=0; i<initNActiveSpecies; i++)
-            {
-                for (label j=0; j<initNActiveSpecies; j++)
-                {
-                    LT_(i, j) = LTvar(i, j);
-                    A_(i, j) = Avar(i, j);
-                }
-            }
-
-            // write the columns for temperature and pressure
-            for (label i=0; i<initNActiveSpecies; i++)
-            {
-                for (label j=1; j>=0; j--)
-                {
-                    LT_(i, nActive_+j)=LTvar(i, initNActiveSpecies+j);
-                    A_(i, nActive_+j)=Avar(i, initNActiveSpecies+j);
-                    LT_(nActive_+j, i)=LTvar(initNActiveSpecies+j, i);
-                    A_(nActive_+j, i)=Avar(initNActiveSpecies+j, i);
-                }
-            }
-            // end with the diagonal elements for temperature and pressure
-            LT_(nActive_, nActive_)=
-                LTvar(initNActiveSpecies, initNActiveSpecies);
-            A_(nActive_, nActive_)=
-                Avar(initNActiveSpecies, initNActiveSpecies);
-            LT_(nActive_+1, nActive_+1)=
-                LTvar(initNActiveSpecies+1, initNActiveSpecies+1);
-            A_(nActive_+1, nActive_+1)=
-                Avar(initNActiveSpecies+1, initNActiveSpecies+1);
-            LT_(nActive_+2, nActive_+2)=
-                LTvar(initNActiveSpecies+2, initNActiveSpecies+2);
-            A_(nActive_+2, nActive_+2)=
-                Avar(initNActiveSpecies+2, initNActiveSpecies+2);
-
-            for (label i=initNActiveSpecies; i<nActive_;i++)
-            {
-                LT_(i, i)=
-                    1.0
-                   /(tolerance_*scaleFactor_[simplifiedToCompleteIndex_[i]]);
-                A_(i, i) = 1;
-            }
-        }
-        
-    }
-    */
-
     const label dim = completeSpaceSize();
 
     // beginning of grow algorithm
