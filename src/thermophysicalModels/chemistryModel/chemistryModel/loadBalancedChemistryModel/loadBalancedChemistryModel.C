@@ -223,11 +223,31 @@ void Foam::loadBalancedChemistryModel<ThermoType>::solveSingle
     // Timer begins
     clockTime time;
     time.timeIncrement();
-    // Composition vector (Yi, T, p, deltaT)
-    scalarField phiq(this->nEqns() + 1);
-    scalarField Rphiq(this->nEqns() + 1);
-    bool retrieve = retrieveProblem(problem, phiq, Rphiq);
-    if(!retrieve)
+    if(problem.procNo == Pstream::myProcNo())
+    {
+        // Composition vector (Yi, T, p, deltaT)
+        scalarField phiq(this->nEqns() + 1);
+        scalarField Rphiq(this->nEqns() + 1);
+        bool retrieve = retrieveProblem(problem, phiq, Rphiq);
+        if(!retrieve)
+        {
+            // Calculate the chemical source terms
+            while(timeLeft > small)
+            {
+                scalar dt = timeLeft;
+                this->solve(
+                    problem.pi,
+                    problem.Ti,
+                    problem.c,
+                    problem.cellid,
+                    dt,
+                    problem.deltaTChem);
+                timeLeft -= dt;
+            }
+            tabulateProblem(problem, phiq, Rphiq);
+        }
+    }
+    else
     {
         // Calculate the chemical source terms
         while(timeLeft > small)
@@ -241,10 +261,8 @@ void Foam::loadBalancedChemistryModel<ThermoType>::solveSingle
                 dt,
                 problem.deltaTChem);
             timeLeft -= dt;
-        }
-        tabulateProblem(problem, phiq, Rphiq);
+        }  
     }
-
     solution.deltaTChem = min(problem.deltaTChem, this->deltaTChemMax_);
     solution.cellid = problem.cellid;
     solution.rr = (problem.c - c0) * problem.rhoi / problem.deltaT;
@@ -378,6 +396,7 @@ Foam::loadBalancedChemistryModel<ThermoType>::getProblems
             problem.deltaT = deltaT[celli];
             problem.cpuTime = cpuTimes_[celli];
             problem.cellid = celli;
+            problem.procNo = Pstream::myProcNo();
 
             // This check can only be done based on the concentration as the
             // reference temperature is not known
