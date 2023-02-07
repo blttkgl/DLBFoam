@@ -86,7 +86,7 @@ private:
     // Private Member Functions
 
         //- Create a reference mapper object
-        static mixtureFractionRefMapper createMapper(const fluidReactionThermo& thermo);
+        static mixtureFractionRefMapper createMapper(const fluidMulticomponentThermo& thermo);
 
         //- Create a load balancer object
         LoadBalancer createBalancer();
@@ -135,7 +135,7 @@ public:
     // Constructors
 
         //- Construct from thermo
-        loadBalancedChemistryModel(const fluidReactionThermo& thermo);
+        loadBalancedChemistryModel(const fluidMulticomponentThermo& thermo);
 
         //- Disallow default bitwise copy construction
         loadBalancedChemistryModel(const loadBalancedChemistryModel&);
