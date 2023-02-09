@@ -12,7 +12,7 @@ EXE_INC = \
 
 LIB_LIBS = \
     -lfluidThermophysicalModels \
-    -lreactionThermophysicalModels \
+    -lmulticomponentThermophysicalModels \
     -L$(FOAM_USER_LIBBIN) \
     -lspecie \
     -lODE \

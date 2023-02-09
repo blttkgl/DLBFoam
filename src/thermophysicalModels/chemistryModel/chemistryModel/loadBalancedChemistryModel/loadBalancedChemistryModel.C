@@ -148,8 +148,6 @@ Foam::scalar Foam::loadBalancedChemistryModel<ThermoType>::solve
     scalar t_solveBuffer(0);
     scalar t_unbalance(0);
 
-    basicChemistryModel::correct();
-
     if(!this->chemistry_)
     {
         return great;
