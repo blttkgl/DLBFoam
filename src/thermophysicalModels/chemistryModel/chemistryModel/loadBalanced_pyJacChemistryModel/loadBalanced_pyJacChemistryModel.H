@@ -96,6 +96,11 @@ public:
     virtual tmp<volScalarField> Qdot() const override;
 
 
+    //- Override tc function from chemistryModel for using calculating chemical time scale
+    //- via pyJac
+    virtual tmp<volScalarField> tc() const override;
+
+
 private:
     //- Temporary concentration field
     mutable scalarField c_;

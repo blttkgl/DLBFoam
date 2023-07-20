@@ -99,8 +99,8 @@ Foam::loadBalancedChemistryModel<ThermoType>::createMapper
             IOobject
             (
                 thermo.phasePropertyName("chemistryProperties"),
-                thermo.T().mesh().time().constant(),
-                thermo.T().mesh(),
+                thermo.mesh().time().constant(),
+                thermo.mesh(),
                 IOobject::MUST_READ,
                 IOobject::NO_WRITE,
                 false
@@ -120,8 +120,8 @@ Foam::loadBalancedChemistryModel<ThermoType>::createBalancer()
             IOobject
             (
                 this->thermo().phasePropertyName("chemistryProperties"),
-                this->thermo().T().mesh().time().constant(),
-                this->thermo().T().mesh(),
+                this->thermo().mesh().time().constant(),
+                this->thermo().mesh(),
                 IOobject::MUST_READ,
                 IOobject::NO_WRITE,
                 false
@@ -363,10 +363,13 @@ Foam::loadBalancedChemistryModel<ThermoType>::getProblems
     const DeltaTType& deltaT
 )
 {
-    const scalarField& T = this->thermo().T();
-    const scalarField& p = this->thermo().p();
-    tmp<volScalarField> trho(this->thermo().rho());
-    const scalarField& rho = trho();
+    const scalarField& T = this->thermo().T().oldTime();
+    const scalarField& p = this->thermo().p().oldTime();
+    const volScalarField& rho0vf =
+        this->mesh().template lookupObject<volScalarField>
+        (
+            this->thermo().phasePropertyName("rho")
+        ).oldTime();
 
 
 
@@ -382,14 +385,14 @@ Foam::loadBalancedChemistryModel<ThermoType>::getProblems
     {       
             for(label i = 0; i < this->nSpecie(); i++)
             {
-                massFraction[i] = this->Y()[i][celli];
+                massFraction[i] = this->Y()[i].oldTime()[celli];
             }
 
             ChemistryProblem problem;
             problem.c = massFraction;
             problem.Ti = T[celli];
             problem.pi = p[celli];
-            problem.rhoi = rho[celli];
+            problem.rhoi = rho0vf[celli];
             problem.deltaTChem = this->deltaTChem_[celli];
             problem.deltaT = deltaT[celli];
             problem.cpuTime = cpuTimes_[celli];
