@@ -24,7 +24,7 @@ internalField  #codeStream
 
         const IOdictionary& d = static_cast<const IOdictionary&>(dict);
         const fvMesh& mesh = refCast<const fvMesh>(d.db());
-        const vectorField& CC = mesh.C(); //cell center
+        const volVectorField& CC = mesh.C(); //cell center
 
 
         vectorField U(mesh.nCells());
@@ -55,7 +55,10 @@ internalField  #codeStream
     codeInclude
     #{
 
-        #include "fvCFD.H"
+        #include "IOdictionary.H"
+        #include "fvMesh.H"
+        #include "vectorField.H"
+        #include "scalarField.H"
 
     #};
 
