@@ -28,16 +28,17 @@ Description
 
 \*---------------------------------------------------------------------------*/
 
-#include "fvCFD.H"
 #include "zeroDimensionalFvMesh.H"
 #include "fluidMulticomponentThermo.H"
 #include "basicChemistryModel.H"
 #include "multicomponentMixture.H"
 #include "chemistrySolver.H"
+#include "physicoChemicalConstants.H"
 #include "OFstream.H"
 #include "basicSpecieMixture.H"
 #include "cellModeller.H"
 #include "thermoTypeFunctions.H"
+#include "argList.H"
 
 #include <iostream> 
 #include <vector> 
@@ -46,7 +47,11 @@ Description
 extern "C" {
     #include "chem_utils.h"
 };
+#include "fvcFlux.H"
 
+#include "fvmDdt.H"
+
+using namespace Foam;
 
 void print_passed(scalar err)
 {
@@ -131,21 +136,21 @@ void performanceCheck(scalar elapsed, scalar reference)
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 int main(int argc, char *argv[])
 {
-    
-    argList::noParallel();
 
+    argList::noParallel();
+    
     #define CREATE_MESH createZeroDimensionalFvMesh.H
     #define NO_CONTROL
 
     #include "StopWatch.H"
 
-    #include "setRootCaseLists.H"
+    #include "setRootCase.H"
     #include "createTime.H"
-
+    
     // Initialisation parameters
     const word constProp = "pressure";
     const word fractionBasis = "mole"; // "mass";
-
+    
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
     // Test set 1:
@@ -154,7 +159,7 @@ int main(int argc, char *argv[])
     // - See README for reasons why lower tolerance is expected for OpenFOAM routine comparison.
     {
         scalar p0 = 1367890.0;
-        scalar T0 = 1000.0;
+        scalar T0 = 1000.0;    
         dictionary fractions;
         fractions.set("CH4", 0.5);
         fractions.set("O2", 1.0);
