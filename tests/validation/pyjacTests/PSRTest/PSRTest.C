@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
         #include "initPSR.H"       
 
         bool Hcheck0a = validatePyjacEnthalpy(Y, 298.15, -256579.71591916375, 1e-7);
-        bool Hcheck0b = validatePyjacEnthalpy(Y, 298.15, thermo.hc().ref()[0], 1e-6);
+        bool Hcheck0b = validatePyjacEnthalpy(Y, 298.15, thermo.ha().ref()[0] - thermo.he().ref()[0], 1e-6);
 
         #include "solveChemistry.H"
 
