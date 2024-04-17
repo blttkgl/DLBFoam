@@ -109,6 +109,10 @@ private:
         //- Update the reaction rates from a list of solutions
         scalar updateReactionRates(const RecvBuffer<ChemistrySolution>& solutions);
 
+        //- Try to retrieve the candidate problem from the ISAT tree
+        bool retrieveProblem(ChemistryProblem& problem, scalarField& phiq, scalarField& Rphiq) const;
+        void tabulateProblem(ChemistryProblem& problem, scalarField& phiq, scalarField& Rphiq) const;
+
         //- Solve the reaction system for the given time step
         //  of given type and return the characteristic time
         template<class DeltaTType>
