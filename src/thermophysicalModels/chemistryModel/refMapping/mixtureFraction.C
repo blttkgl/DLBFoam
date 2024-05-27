@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
-  \\      /  F ield         | DLBFoam: Dynamic Load Balancing 
+  \\      /  F ield         | DLBFoam: Dynamic Load Balancing
    \\    /   O peration     | for fast reactive simulations
-    \\  /    A nd           | 
+    \\  /    A nd           |
      \\/     M anipulation  | 2020, Aalto University, Finland
 -------------------------------------------------------------------------------
 License
@@ -20,7 +20,7 @@ License
     for more details.
     You should have received a copy of the GNU General Public License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
-    
+
 \*---------------------------------------------------------------------------*/
 
 #include "mixtureFraction.H"
@@ -30,7 +30,7 @@ License
 // Constructor
 Foam::mixtureFraction::mixtureFraction(const dictionary& mixFracDict, const fluidMulticomponentThermo& thermo)
     : mixFracDict_(mixFracDict), species_(thermo.species()), alpha_(thermo.species().size(), 0.0),
-      beta_(2, 0.0) 
+      beta_(2, 0.0)
 {
     initialize(thermo);
 }
@@ -93,7 +93,7 @@ void Foam::mixtureFraction::initialize(const fluidMulticomponentThermo& thermo)
 Foam::scalar Foam::mixtureFraction::massFractionToMixtureFraction(const scalarField& massFraction) const
 {
 
-    scalar beta = 0.0; 
+    scalar beta = 0.0;
     forAll(massFraction, iField)
     {
         beta += alpha_[iField] * massFraction[iField];

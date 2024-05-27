@@ -1,6 +1,6 @@
 # DLBFoam: Dynamic load balancing for fast reactive simulations
 ![v1.1](https://img.shields.io/badge/DLBFoam-v1.1-blue)
-![OpenFOAM dev](https://img.shields.io/badge/OpenFOAM-dev_53dc33d25-brightgreen)
+![OpenFOAM dev](https://img.shields.io/badge/OpenFOAM-dev_20230829-brightgreen)
 
 [<img src="https://img.shields.io/badge/-YouTube_Video_Tutorials-red?style=for-the-badge&logo=youtube&logoColor=white"/>](https://www.youtube.com/playlist?list=PLXqVaOXSsv1SBnfyGRa_C-E0X--FIT27P)
 
@@ -32,10 +32,6 @@ details can be found in our paper [[1]](#1). In addition, the cell-wise chemistr
 - [ct2foam](https://github.com/kahilah/ct2foam) (Optional)
 
 ## Compilation
-
-**NOTE: Due to recent changes in OpenFOAM-dev, the patch file 'dlbfoam.patch' included in this branch should be applied to the OpenFOAM-dev installation.**
-
-**Apply the patch by *git apply dlbfoam.patch* on your OpenFOAM-dev installation before moving forward with DLBFoam compilation.**
 
 DLBFoam can be compiled by typing the following command after sourcing appropriate OpenFOAM version and making sure a valid LAPACK installation exists:
 

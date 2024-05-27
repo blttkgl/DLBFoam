@@ -131,8 +131,8 @@ void performanceCheck(scalar elapsed, scalar reference)
 }
 
 
-
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
 int main(int argc, char *argv[])
 {
 

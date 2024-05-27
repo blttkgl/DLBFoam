@@ -56,6 +56,4 @@ Foam::loadBalancedChemistryModel<ThermoType>::RR(const label i) {
     return rr[i];
 }
 
-
-
 // ************************************************************************* //

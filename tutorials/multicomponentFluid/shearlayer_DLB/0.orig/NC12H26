@@ -53,11 +53,7 @@ internalField  #codeStream
     //! Optional:
     codeInclude
     #{
-
-        #include "IOdictionary.H"
-        #include "fvMesh.H"
         #include "volFields.H"
-
     #};
 
 

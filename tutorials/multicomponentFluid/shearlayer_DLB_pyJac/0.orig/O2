@@ -11,12 +11,11 @@ FoamFile
     format      ascii;
     class       volScalarField;
     location    "0";
-    object      T;
+    object      O2;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-dimensions      [0 0 0 1 0 0 0];
-
+dimensions      [0 0 0 0 0 0 0];
 
 internalField  #codeStream
 {
@@ -29,10 +28,10 @@ internalField  #codeStream
         const volVectorField& CC = mesh.C(); //cell center
 
 
-        scalarField T(mesh.nCells());
-        scalar T_i = 900;
+        scalarField O2(mesh.nCells());
+        scalar O2_i = 0.23;
 
-        scalar A = 500;
+        scalar A = 0.23;
         scalar L = 0.008;
         scalar ro = 0.0004;
         scalar B = 5;
@@ -45,22 +44,17 @@ internalField  #codeStream
 
         	scalar y = CC[cellI].y();
 
-            T[cellI] = T_i - A * 0.5 * (1-tanh(B*(mag(y-L/2)/ro - ro/mag(y-L/2))));
-
+            O2[cellI] = O2_i - A * 0.5 * (1-tanh(B*(mag(y-L/2)/ro - ro/mag(y-L/2))));
 
         }
 
-        writeEntry(os,"",T);
+        writeEntry(os,"",O2);
     #};
 
     //! Optional:
     codeInclude
     #{
-
-        #include "IOdictionary.H"
-        #include "fvMesh.H"
         #include "volFields.H"
-
     #};
 
 
@@ -82,10 +76,8 @@ internalField  #codeStream
     #};
 
 };
-
 boundaryField
 {
-
     upperBoundary
     {
         type            cyclic;
