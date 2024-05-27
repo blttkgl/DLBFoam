@@ -34,7 +34,7 @@ Foam::loadBalancedChemistryModel<ThermoType>::
     loadBalancedChemistryModel(const fluidMulticomponentThermo& thermo)
     :
         chemistryModel<ThermoType>(thermo),
-        balancer_(createBalancer()), 
+        balancer_(createBalancer()),
         mapper_(createMapper(this->thermo())),
         cpuTimes_
         (
@@ -61,7 +61,9 @@ Foam::loadBalancedChemistryModel<ThermoType>::
             ),
             this->mesh(),
             scalar(0.0)
-        )
+        ),
+        tabulationPtr_(chemistryTabulationMethod::New(*this, *this)),
+        tabulation_(*tabulationPtr_)
     {
         if(balancer_.log())
         {
@@ -139,7 +141,7 @@ Foam::scalar Foam::loadBalancedChemistryModel<ThermoType>::solve
     const DeltaTType& deltaT
 )
 {
-    this->tabulation().reset();
+    tabulation_.reset();
     // CPU time analysis
     clockTime timer;
     scalar t_getProblems(0);
@@ -203,7 +205,7 @@ Foam::scalar Foam::loadBalancedChemistryModel<ThermoType>::solve
                         << setw(22) << Pstream::myProcNo()
                         << endl;
     }
-    this->tabulation().update();
+    tabulation_.update();
 
     return updateReactionRates(incomingSolutions);
 }
@@ -259,7 +261,7 @@ void Foam::loadBalancedChemistryModel<ThermoType>::solveSingle
                 dt,
                 problem.deltaTChem);
             timeLeft -= dt;
-        }  
+        }
     }
     solution.deltaTChem = min(problem.deltaTChem, this->deltaTChemMax_);
     solution.cellid = problem.cellid;
@@ -382,7 +384,7 @@ Foam::loadBalancedChemistryModel<ThermoType>::getProblems
 
     label counter = 0;
     forAll(T, celli)
-    {       
+    {
             for(label i = 0; i < this->nSpecie(); i++)
             {
                 massFraction[i] = this->Y()[i].oldTime()[celli];
@@ -481,7 +483,7 @@ void Foam::loadBalancedChemistryModel<ThermoType>::updateReactionRate
 
 
 template <class ThermoType>
-bool Foam::loadBalancedChemistryModel<ThermoType>::retrieveProblem 
+bool Foam::loadBalancedChemistryModel<ThermoType>::retrieveProblem
 (
     ChemistryProblem& problem, scalarField& phiq, scalarField& Rphiq
 ) const
@@ -494,13 +496,13 @@ bool Foam::loadBalancedChemistryModel<ThermoType>::retrieveProblem
     phiq[phiq.size()-2] = problem.pi;
     phiq[phiq.size()-1] = problem.deltaT;
 
-    if(this->tabulation().retrieve(phiq,Rphiq))
+    if(tabulation_.retrieve(phiq,Rphiq))
     {
         // Retrieved solution stored in Rphiq
         scalar csum = 0.0;
         for (label i=0; i<this->nEqns()-2; i++)
-        { 
-            problem.c[i] = Rphiq[i];        
+        {
+            problem.c[i] = Rphiq[i];
             csum+=Rphiq[i];
         }
         if(this->nEqns() == this->nSpecie()+1)      // check if you are operating with pyJac solver (nEqns=nSpecie+1)
@@ -515,12 +517,12 @@ bool Foam::loadBalancedChemistryModel<ThermoType>::retrieveProblem
     }
 }
 template <class ThermoType>
-void Foam::loadBalancedChemistryModel<ThermoType>::tabulateProblem 
+void Foam::loadBalancedChemistryModel<ThermoType>::tabulateProblem
 (
     ChemistryProblem& problem, scalarField& phiq, scalarField& Rphiq
 ) const
 {
-    if (this->tabulation().tabulates())
+    if (tabulation_.tabulates())
     {
 
         for (label i=0; i<this->nEqns()-2; i++)
@@ -530,8 +532,8 @@ void Foam::loadBalancedChemistryModel<ThermoType>::tabulateProblem
         Rphiq[Rphiq.size()-3] = problem.Ti;
         Rphiq[Rphiq.size()-2] = problem.pi;
         Rphiq[Rphiq.size()-1] = problem.deltaT;
-        
-        this->tabulation().add
+
+        tabulation_.add
         (
             phiq,
             Rphiq,
