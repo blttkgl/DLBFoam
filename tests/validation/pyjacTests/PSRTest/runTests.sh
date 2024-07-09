@@ -8,6 +8,8 @@ echo
 echo -e "${YELLOW}Validate pyJac chemistry module against reference data on perfectly stirred reactor:${DARKGRAY}"
 echo
 
+foamDictionary -entry tabulation/method -set none testCase/constant/chemistryProperties > /dev/null
+
 ./PSRTest.bin -case testCase | tee testCase/log.orig
 
 if [ $? -eq 0 ]; then
@@ -43,6 +45,19 @@ else
     echo -e "${RED}FAILED. See tests/validation/pyjacTests/PSRTest/testCase/log.dynamicCode for further information.${NC}"
     echo -e "${RED}You may still use DLBFoam with thermo properties that are precompiled in OpenFOAM.${NC}"
 fi
+
+
+echo
+echo -e "${YELLOW}Test ISAT_pyJac compilation for DLBFoam-ISAT coupling:${DARKGRAY}"
+foamDictionary -entry tabulation/method -set ISAT_pyJac testCase/constant/chemistryProperties > /dev/null
+./PSRTest.bin -case testCase > testCase/log.dynamicCode 2>&1
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}PASSED.${NC}"
+else
+    echo -e "${RED}FAILED. Check ISAT_pyJac compilation.${NC}"
+    echo -e "${RED}You may still use DLBFoam without tabulation.${NC}"
+fi
+
 
 cp testCase/constant/thermophysicalProperties.orig testCase/constant/thermophysicalProperties
 rm testCase/constant/thermophysicalProperties.orig

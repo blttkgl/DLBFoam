@@ -1,4 +1,9 @@
 #!/bin/sh
+# Run from this directory
+cd "${0%/*}" || exit 1
+
+# Source tutorial run functions
+. "$WM_PROJECT_DIR/bin/tools/RunFunctions"
 
 cd pyJac/lib
 ./runCmake.sh
@@ -6,13 +11,15 @@ cd -
 cp -r pyJac/foam constant/
 cp pyJac/lib/build/libc_pyjac.so constant/foam/
 
-blockMesh
+runApplication blockMesh
+
 N_PROCS=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}')
 [ -z "$N_PROCS" ] && N_PROCS=4 # if N_PROCS not found, set it to 4
-sed -i "s/numberOfSubdomains .*/numberOfSubdomains $N_PROCS;/g" system/decomposeParDict
+
+foamDictionary system/decomposeParDict -entry numberOfSubdomains -set $N_PROCS
 
 rm -rf 0
 cp -r 0.orig 0
 
-decomposePar -force > log.decompose
-mpirun -np $N_PROCS foamRun -solver multicomponentFluid -parallel > log.foamRun
+runApplication decomposePar
+runParallel "$(getApplication)"

@@ -49,7 +49,7 @@ Foam::loadBalancedChemistryModel<ThermoType>::RR(const label i) const{
 // Non const access to chemical source terms was removed in OF 11
 // and thus casting is required
 template <class ThermoType>
-inline Foam::volScalarField::Internal& 
+inline Foam::volScalarField::Internal&
 Foam::loadBalancedChemistryModel<ThermoType>::RR(const label i) {
     PtrList<volScalarField::Internal>& rr =
     	const_cast<PtrList<volScalarField::Internal>&>(chemistryModel<ThermoType>::RR());

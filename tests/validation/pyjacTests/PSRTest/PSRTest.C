@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
-  \\      /  F ield         | DLBFoam: Dynamic Load Balancing 
+  \\      /  F ield         | DLBFoam: Dynamic Load Balancing
    \\    /   O peration     | for fast reactive simulations
-    \\  /    A nd           | 
+    \\  /    A nd           |
      \\/     M anipulation  | 2020, Aalto University, Finland
 -------------------------------------------------------------------------------
 License
@@ -28,27 +28,27 @@ Description
 
 \*---------------------------------------------------------------------------*/
 
-#include "argList.H"
-#include "volFields.H"
 #include "zeroDimensionalFvMesh.H"
 #include "fluidMulticomponentThermo.H"
 #include "basicChemistryModel.H"
 #include "multicomponentMixture.H"
 #include "chemistrySolver.H"
+#include "physicoChemicalConstants.H"
 #include "OFstream.H"
 #include "cellModeller.H"
 #include "thermoTypeFunctions.H"
-#include "physicoChemicalConstants.H"
-#include "fvcFlux.H"
-#include "fvmDdt.H"
+#include "argList.H"
 
-#include <iostream> 
-#include <vector> 
+#include <iostream>
+#include <vector>
 
 // pyJac dependencies
 extern "C" {
     #include "chem_utils.h"
 };
+#include "fvcFlux.H"
+
+#include "fvmDdt.H"
 
 using namespace Foam;
 
@@ -95,8 +95,8 @@ bool validatePyjacEnthalpy(PtrList<volScalarField>& Y, scalar T, scalar referenc
     eval_h(T, sp_enth_form.data());
 
     scalar h = 0.0;
-    for (label i = 0; i < Y.size(); i++) 
-    { 
+    for (label i = 0; i < Y.size(); i++)
+    {
         h += sp_enth_form[i]*Y[i][0];
     }
 
@@ -135,7 +135,7 @@ void performanceCheck(scalar elapsed, scalar reference)
 
 int main(int argc, char *argv[])
 {
-    
+
     argList::noParallel();
 
     #define CREATE_MESH createZeroDimensionalFvMesh.H
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
 
     // Test set 1:
     // - Compare pyjac enthalpy evaluation against reference
-    // - For consistency, ensure that OpenFoam enthalpy evaluationshould is close to pyJac values. 
+    // - For consistency, ensure that OpenFoam enthalpy evaluationshould is close to pyJac values.
     // - See README for reasons why lower tolerance is expected for OpenFOAM routine comparison.
     {
         scalar p0 = 1367890.0;
@@ -165,10 +165,10 @@ int main(int argc, char *argv[])
         fractions.set("N2", 3.76);
         double endTime = 0.07;
 
-        #include "initPSR.H"       
+        #include "initPSR.H"
 
         bool Hcheck0a = validatePyjacEnthalpy(Y, 298.15, -256579.71591916375, 1e-7);
-        bool Hcheck0b = validatePyjacEnthalpy(Y, 298.15, thermo.hc().ref()[0], 1e-6);
+        bool Hcheck0b = validatePyjacEnthalpy(Y, 298.15, thermo.ha().ref()[0] - thermo.he()[0], 1e-6);
 
         #include "solveChemistry.H"
 

@@ -14,7 +14,7 @@ FoamFile
     object          chemistryProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
+#includeEtc "caseDicts/solvers/chemistry/TDAC/chemistryProperties.cfg"
 refmapping
 {
     active          true;
@@ -55,6 +55,14 @@ odeCoeffs
     solver          seulex_LAPACK;
     absTol          1e-08;
     relTol          1e-05;
+}
+reduction
+{
+}
+
+tabulation
+{
+	method	ISAT_pyJac;
 }
 
 reactions

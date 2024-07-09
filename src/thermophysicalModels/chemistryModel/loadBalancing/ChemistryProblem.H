@@ -55,6 +55,7 @@ struct ChemistryProblem
     scalar deltaT;
     scalar cpuTime;
     label cellid;
+    scalar procNo;
 
     // TODO: implement!
     bool operator==(const ChemistryProblem& rhs) const
@@ -80,6 +81,7 @@ static inline Ostream& operator<<(Ostream& os, const ChemistryProblem& p)
     os << p.deltaT;
     os << p.cpuTime;
     os << p.cellid;
+    os << p.procNo;
 
     return os;
 }
@@ -96,6 +98,7 @@ static inline Istream& operator>>(Istream& is, ChemistryProblem& p)
     is >> p.deltaT;
     is >> p.cpuTime;
     is >> p.cellid;
+    is >> p.procNo;
 
     return is;
 }

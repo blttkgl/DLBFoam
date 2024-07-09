@@ -34,14 +34,14 @@ Foam::loadBalancedChemistryModel<ThermoType>::
     loadBalancedChemistryModel(const fluidMulticomponentThermo& thermo)
     :
         chemistryModel<ThermoType>(thermo),
-        balancer_(createBalancer()), 
+        balancer_(createBalancer()),
         mapper_(createMapper(this->thermo())),
         cpuTimes_
         (
             IOobject
             (
                 thermo.phasePropertyName("cellCpuTimes"),
-                this->time().timeName(),
+                this->time().name(),
                 this->mesh(),
                 IOobject::NO_READ,
                 IOobject::AUTO_WRITE
@@ -54,14 +54,16 @@ Foam::loadBalancedChemistryModel<ThermoType>::
             IOobject
             (
                 thermo.phasePropertyName("referenceMap"),
-                this->time().timeName(),
+                this->time().name(),
                 this->mesh(),
                 IOobject::NO_READ,
                 IOobject::AUTO_WRITE
             ),
             this->mesh(),
             scalar(0.0)
-        )
+        ),
+        tabulationPtr_(chemistryTabulationMethod::New(*this, *this)),
+        tabulation_(*tabulationPtr_)
     {
         if(balancer_.log())
         {
@@ -139,6 +141,7 @@ Foam::scalar Foam::loadBalancedChemistryModel<ThermoType>::solve
     const DeltaTType& deltaT
 )
 {
+    tabulation_.reset();
     // CPU time analysis
     clockTime timer;
     scalar t_getProblems(0);
@@ -202,6 +205,7 @@ Foam::scalar Foam::loadBalancedChemistryModel<ThermoType>::solve
                         << setw(22) << Pstream::myProcNo()
                         << endl;
     }
+    tabulation_.update();
 
     return updateReactionRates(incomingSolutions);
 }
@@ -219,10 +223,32 @@ void Foam::loadBalancedChemistryModel<ThermoType>::solveSingle
     // Timer begins
     clockTime time;
     time.timeIncrement();
-
-    // Define a const label to pass as the cell index placeholder
-    const label arbitrary = 0;
-
+    if(problem.procNo == Pstream::myProcNo())
+    {
+        // Composition vector (Yi, T, p, deltaT)
+        scalarField phiq(this->nEqns() + 1);
+        scalarField Rphiq(this->nEqns() + 1);
+        bool retrieve = retrieveProblem(problem, phiq, Rphiq);
+        if(!retrieve)
+        {
+            // Calculate the chemical source terms
+            while(timeLeft > small)
+            {
+                scalar dt = timeLeft;
+                this->solve(
+                    problem.pi,
+                    problem.Ti,
+                    problem.c,
+                    problem.cellid,
+                    dt,
+                    problem.deltaTChem);
+                timeLeft -= dt;
+            }
+            tabulateProblem(problem, phiq, Rphiq);
+        }
+    }
+    else
+    {
         // Calculate the chemical source terms
         while(timeLeft > small)
         {
@@ -231,20 +257,17 @@ void Foam::loadBalancedChemistryModel<ThermoType>::solveSingle
                 problem.pi,
                 problem.Ti,
                 problem.c,
-                arbitrary,
+                problem.cellid,
                 dt,
                 problem.deltaTChem);
             timeLeft -= dt;
-        }  
-
-    solution.rr = (problem.c - c0) * problem.rhoi / problem.deltaT;
+        }
+    }
     solution.deltaTChem = min(problem.deltaTChem, this->deltaTChemMax_);
-
-    // Timer ends
-    solution.cpuTime = time.timeIncrement();    
-
     solution.cellid = problem.cellid;
-    solution.rhoi = problem.rhoi;
+    solution.rr = (problem.c - c0) * problem.rhoi / problem.deltaT;
+    // Timer ends
+    solution.cpuTime = time.timeIncrement();
 }
 
 
@@ -361,7 +384,7 @@ Foam::loadBalancedChemistryModel<ThermoType>::getProblems
 
     label counter = 0;
     forAll(T, celli)
-    {       
+    {
             for(label i = 0; i < this->nSpecie(); i++)
             {
                 massFraction[i] = this->Y()[i].oldTime()[celli];
@@ -376,6 +399,7 @@ Foam::loadBalancedChemistryModel<ThermoType>::getProblems
             problem.deltaT = deltaT[celli];
             problem.cpuTime = cpuTimes_[celli];
             problem.cellid = celli;
+            problem.procNo = Pstream::myProcNo();
 
             // This check can only be done based on the concentration as the
             // reference temperature is not known
@@ -455,4 +479,67 @@ void Foam::loadBalancedChemistryModel<ThermoType>::updateReactionRate
         this->RR(j)[i] = solution.rr[j];
     }
     this->deltaTChem_[i] = min(solution.deltaTChem, this->deltaTChemMax_);
+}
+
+
+template <class ThermoType>
+bool Foam::loadBalancedChemistryModel<ThermoType>::retrieveProblem
+(
+    ChemistryProblem& problem, scalarField& phiq, scalarField& Rphiq
+) const
+{
+    for (label i=0; i<this->nEqns()-2; i++)
+    {
+        phiq[i] = problem.c[i];
+    }
+    phiq[phiq.size()-3] = problem.Ti;
+    phiq[phiq.size()-2] = problem.pi;
+    phiq[phiq.size()-1] = problem.deltaT;
+
+    if(tabulation_.retrieve(phiq,Rphiq))
+    {
+        // Retrieved solution stored in Rphiq
+        scalar csum = 0.0;
+        for (label i=0; i<this->nEqns()-2; i++)
+        {
+            problem.c[i] = Rphiq[i];
+            csum+=Rphiq[i];
+        }
+        if(this->nEqns() == this->nSpecie()+1)      // check if you are operating with pyJac solver (nEqns=nSpecie+1)
+        {
+            problem.c[this->nSpecie()-1] = 1.0-csum;
+        }
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+template <class ThermoType>
+void Foam::loadBalancedChemistryModel<ThermoType>::tabulateProblem
+(
+    ChemistryProblem& problem, scalarField& phiq, scalarField& Rphiq
+) const
+{
+    if (tabulation_.tabulates())
+    {
+
+        for (label i=0; i<this->nEqns()-2; i++)
+        {
+            Rphiq[i] = problem.c[i];
+        }
+        Rphiq[Rphiq.size()-3] = problem.Ti;
+        Rphiq[Rphiq.size()-2] = problem.pi;
+        Rphiq[Rphiq.size()-1] = problem.deltaT;
+
+        tabulation_.add
+        (
+            phiq,
+            Rphiq,
+            this->nEqns()-2,   // TODO: What should be the value here, when we have the pyJac array Nsp-1+T+p???
+            problem.cellid,
+            problem.deltaT
+        );
+    }
 }
