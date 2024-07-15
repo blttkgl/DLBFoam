@@ -48,6 +48,7 @@ fi
 cp testCase/constant/chemistryProperties testCase/constant/chemistryProperties.orig
 foamDictionary  testCase/constant/chemistryProperties -entry '#includeEtc' -add '"caseDicts/solvers/chemistry/TDAC/chemistryProperties.cfg"'
 foamDictionary  testCase/constant/chemistryProperties -entry tabulation -add '{}'
+foamDictionary  testCase/constant/chemistryProperties -expand -entry reduction -remove
 echo
 echo -e "${YELLOW}Test ISAT_pyJac compilation for DLBFoam-ISAT coupling:${DARKGRAY}"
 foamDictionary -entry tabulation/method -set ISAT_pyJac testCase/constant/chemistryProperties > /dev/null
