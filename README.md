@@ -1,6 +1,6 @@
 # DLBFoam: Dynamic load balancing for fast reactive simulations
 ![v1.1](https://img.shields.io/badge/DLBFoam-v1.1-blue)
-![OpenFOAM dev](https://img.shields.io/badge/OpenFOAM-dev_20230829-brightgreen)
+![OpenFOAM dev](https://img.shields.io/badge/OpenFOAM-dev_20240707-brightgreen)
 
 [<img src="https://img.shields.io/badge/-YouTube_Video_Tutorials-red?style=for-the-badge&logo=youtube&logoColor=white"/>](https://www.youtube.com/playlist?list=PLXqVaOXSsv1SBnfyGRa_C-E0X--FIT27P)
 
@@ -154,6 +154,7 @@ Subsequent cells following the same condition are mapped from this reference sol
 between reference solution and other reference cells and ensures:
 abs(T<sub>cell</sub>-T<sub>ref</sub>)<deltaT.
 
+* (Optional) In-situ adaptive tabulation (ISAT) is compatible with DLBFoam since OpenFOAM 12. Check commented out section in [chemistryProperties](tutorials/multicomponentFluid/shearlayer_DLB_pyJac/constant/chemistryProperties) of `shearlayer_DLB_pyJac` tutorial for an example.
 
 * Run the case normally with OpenFOAM's reactive solvers.
 
