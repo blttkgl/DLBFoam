@@ -35,7 +35,7 @@ template <class ThermoType>
 loadBalanced_pyJacChemistryModel<ThermoType>::loadBalanced_pyJacChemistryModel(
     const fluidMulticomponentThermo& thermo)
     : loadBalancedChemistryModel<ThermoType>(thermo),
-    c_(this->nSpecie()),
+    Y_(this->nSpecie()),
     sp_enth_form(this->nSpecie()) {
 
     if (this->chemistry_) {
@@ -77,30 +77,30 @@ loadBalanced_pyJacChemistryModel<ThermoType>::~loadBalanced_pyJacChemistryModel(
 
 template <class ThermoType>
 void loadBalanced_pyJacChemistryModel<ThermoType>::jacobian(
-    const scalar t, const scalarField& c, const label li, scalarField& dcdt, scalarSquareMatrix& J)
+    const scalar t, const scalarField& TYp, const label li, scalarField& dTYdt, scalarSquareMatrix& J)
     const {
 
     std::vector<scalar> yToPyJac(this->nSpecie() + 1, 0.0);
     std::vector<scalar> jac(this->nSpecie() * this->nSpecie(), 0.0);
 
     J = Zero;
-    dcdt = Zero;
-    const scalar T = c[0];
-    const scalar p = c[this->nSpecie()];
-    scalar csum = 0.0;
+    dTYdt = Zero;
+    const scalar T = TYp[0];
+    const scalar p = TYp[this->nSpecie()];
+    scalar Ysum = 0.0;
 
     for (label i = 0; i < this->nSpecie() - 1; i++) {
-        this->c_[i] = max(c[i + 1], 0);
-        csum += this->c_[i];
+        this->Y_[i] = max(TYp[i + 1], 0);
+        Ysum += this->Y_[i];
     }
 
-    this->c_[this->nSpecie() - 1] = 1.0 - csum; // The last specie
+    this->Y_[this->nSpecie() - 1] = 1.0 - Ysum; // The last specie
     yToPyJac[0]                  = T;
     // i=1->nSpecie are mass fractions
-    for (label i = 1; i < this->nSpecie(); i++) { yToPyJac[i] = this->c_[i - 1]; }
+    for (label i = 1; i < this->nSpecie(); i++) { yToPyJac[i] = this->Y_[i - 1]; }
     // The last specie
 
-    yToPyJac[this->nSpecie()] = this->c_[this->nSpecie() - 1];
+    yToPyJac[this->nSpecie()] = this->Y_[this->nSpecie() - 1];
     // call pyJac Jacobian evaluation
     eval_jacob(0, p, yToPyJac.data(), jac.data());
     label k = 0;
@@ -119,31 +119,31 @@ void loadBalanced_pyJacChemistryModel<ThermoType>::jacobian(
 
 template <class ThermoType>
 void loadBalanced_pyJacChemistryModel<ThermoType>::derivatives(
-    const scalar t, const scalarField& c, const label li, scalarField& dcdt) const {
+    const scalar t, const scalarField& TYp, const label li, scalarField& dTYpdt) const {
 
     std::vector<scalar> yToPyJac(this->nSpecie() + 1, 0.0);
     std::vector<scalar> dy(this->nSpecie(), 0.0);
 
-    const scalar T = c[0];
-    const scalar p = c[this->nSpecie()];
-    scalar csum = 0.0;
+    const scalar T = TYp[0];
+    const scalar p = TYp[this->nSpecie()];
+    scalar Ysum = 0.0;
     for (label i = 0; i < this->nSpecie() - 1; i++) {
-        this->c_[i] = max(c[i + 1], 0.0);
-        csum += this->c_[i];
+        this->Y_[i] = max(TYp[i + 1], 0.0);
+        Ysum += this->Y_[i];
     }
-    this->c_[this->nSpecie() - 1] = 1.0 - csum; // The last specie
+    this->Y_[this->nSpecie() - 1] = 1.0 - Ysum; // The last specie
 
     yToPyJac[0] = T;
     // i=1->nSpecie are mass fractions
-    for (label i = 1; i < this->nSpecie(); i++) { yToPyJac[i] = this->c_[i - 1]; }
+    for (label i = 1; i < this->nSpecie(); i++) { yToPyJac[i] = this->Y_[i - 1]; }
     // The last specie
-    yToPyJac[this->nSpecie()] = this->c_[this->nSpecie() - 1];
+    yToPyJac[this->nSpecie()] = this->Y_[this->nSpecie() - 1];
 
     // call pyJac RHS function
     dydt(0, p, yToPyJac.data(), dy.data());
-    for (label i = 0; i < this->nSpecie(); i++) { dcdt[i] = dy[i]; }
+    for (label i = 0; i < this->nSpecie(); i++) { dTYpdt[i] = dy[i]; }
     // dp/dt = 0
-    dcdt[this->nSpecie()] = 0.0;
+    dTYpdt[this->nSpecie()] = 0.0;
 }
 
 template <class ThermoType>

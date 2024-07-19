@@ -14,7 +14,7 @@ Foam::DynamicList<Foam::ChemistryProblem> create_random_problems(size_t count) {
         ChemistryProblem p;
 
         scalarField s(10);
-        p.c          = random_double(0.0, 1.0);
+        p.Y          = random_double(0.0, 1.0);
         p.Ti         = random_double(0.0, 1.0);
         p.pi         = random_double(0.0, 1.0);
         p.rhoi       = random_double(0.0, 1.0);

@@ -17,7 +17,7 @@ DynamicList<ChemistryProblem> create_problems(int count){
 
         scalarField s(10);
         s = 32.04;
-        p.c = s;
+        p.Y = s;
         p.Ti = 13.0;
         p.pi = 54.0;
         p.deltaTChem = 0.3;
@@ -100,7 +100,7 @@ TEST_CASE("LoadBalancerBase sendRecv() swap test"){
     if (Pstream::myProcNo() == 1) {
         for (label i = 0; i < 10; ++i) {
             auto p = recv_buffer[0][i];
-            CHECK(p.c[0] == 32.04); // note only the first one checked
+            CHECK(p.Y[0] == 32.04); // note only the first one checked
             CHECK(p.Ti == 13.0);
             CHECK(p.pi == 54.0);
             CHECK(p.deltaTChem == 0.3);

@@ -59,7 +59,7 @@ class ode_pyJac
         mutable autoPtr<ODESolver> odeSolver_;
 
         // Solver data
-        mutable scalarField cTp_;
+        mutable scalarField YTp_;
 
 
 public:
@@ -85,7 +85,7 @@ public:
         (
             scalar& p,
             scalar& T,
-            scalarField& c,
+            scalarField& Y,
             const label li,
             scalar& deltaT,
             scalar& subDeltaT
