@@ -150,23 +150,15 @@ template <class ThermoType>
 Foam::tmp<Foam::volScalarField>
 loadBalanced_pyJacChemistryModel<ThermoType>::tc() const {
 
+    if(PYJAC_FWD_RATES()!=this->nReaction()) {
     FatalErrorInFunction
-        << "loadBalanced_pyJac chemistry model currently does not "<<
-            "support combustion models such as PaSR or EDC.\n" <<
-            "Please either use laminar combustion model, "<< 
-            "or use loadBalanced chemistry model." << exit(FatalError);
- 
-    tmp<volScalarField> ttc
-    (
-        volScalarField::New
-        (
-            "tc",
-            this->mesh(),
-            dimensionedScalar(dimTime, small),
-            extrapolatedCalculatedFvPatchScalarField::typeName
-        )
-    );
-    return ttc;
+        << "Number of reactions in pyJac (" << PYJAC_FWD_RATES() <<
+        ") and in OpenFOAM's native chemistry model (" << this->nReaction() <<
+        ") do not match.\nChemical time scale required in combustion models such "<<
+        "as PaSR or EDC is calculated using standard chemistry model \n" <<
+        "and thus reactions needs to be given for the native chemistry model as a list" << exit(FatalError);
+    }
+    return loadBalancedChemistryModel<ThermoType>::tc();
 }
 
 

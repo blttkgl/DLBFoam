@@ -39,9 +39,9 @@ methodRenamed
     loadBalanced_pyJac loadBalanced_pyJacChemistryModel
 );
 
+// The path to dlbfoam is given as a variable since wmakeLnIncludeAll cannot process paths with hyphens
 codeOptions
 #{
-// The path is given as a variable since wmakeLnIncludeAll cannot process paths with hyphens
 DLBFOAM_PATH = %MY_DLBFOAM_PATH%/src/thermophysicalModels/chemistryModel/lnInclude
 
 EXE_INC = \
