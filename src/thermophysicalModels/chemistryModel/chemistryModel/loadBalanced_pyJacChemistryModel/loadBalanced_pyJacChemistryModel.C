@@ -80,68 +80,43 @@ void loadBalanced_pyJacChemistryModel<ThermoType>::jacobian(
     const scalar t, const scalarField& TYp, const label li, scalarField& dTYdt, scalarSquareMatrix& J)
     const {
 
-    std::vector<scalar> yToPyJac(this->nSpecie() + 1, 0.0);
-    std::vector<scalar> jac(this->nSpecie() * this->nSpecie(), 0.0);
+    scalarField yToPyJac(this->nSpecie(), 0.0);
+    scalarField jac(this->nSpecie() * this->nSpecie(), 0.0);
 
     J = Zero;
     dTYdt = Zero;
-    const scalar T = TYp[0];
     const scalar p = TYp[this->nSpecie()];
-    scalar Ysum = 0.0;
 
-    for (label i = 0; i < this->nSpecie() - 1; i++) {
-        this->Y_[i] = max(TYp[i + 1], 0);
-        Ysum += this->Y_[i];
+    yToPyJac[0] = TYp[0];
+    for (label i = 1; i < this->nSpecie(); i++) {
+        yToPyJac[i] = max(TYp[i], 0);
     }
-
-    this->Y_[this->nSpecie() - 1] = 1.0 - Ysum; // The last specie
-    yToPyJac[0]                  = T;
-    // i=1->nSpecie are mass fractions
-    for (label i = 1; i < this->nSpecie(); i++) { yToPyJac[i] = this->Y_[i - 1]; }
-    // The last specie
-
-    yToPyJac[this->nSpecie()] = this->Y_[this->nSpecie() - 1];
-    // call pyJac Jacobian evaluation
-    eval_jacob(0, p, yToPyJac.data(), jac.data());
-    label k = 0;
+    
+    eval_jacob(0, p, yToPyJac.begin(), jac.begin());
+    
     for (label j = 0; j < this->nSpecie(); j++) {
-        for (label i = 0; i < this->nSpecie(); i++) { J[i][j] = jac[k + i]; }
-        k += this->nSpecie();
+        for (label i = 0; i < this->nSpecie(); i++) { 
+        J[i][j] = jac[i + j*this->nSpecie()];
+        }
     }
-
-    // Last row and column to zero
-    for (label j = 0; j < this->nSpecie() + 1; j++) {
-        J[this->nSpecie()][j] = 0.0;
-        J[j][this->nSpecie()] = 0.0;
-    }
-
 }
 
 template <class ThermoType>
 void loadBalanced_pyJacChemistryModel<ThermoType>::derivatives(
     const scalar t, const scalarField& TYp, const label li, scalarField& dTYpdt) const {
 
-    std::vector<scalar> yToPyJac(this->nSpecie() + 1, 0.0);
-    std::vector<scalar> dy(this->nSpecie(), 0.0);
+    scalarField yToPyJac(this->nSpecie(), 0.0);
 
-    const scalar T = TYp[0];
     const scalar p = TYp[this->nSpecie()];
-    scalar Ysum = 0.0;
-    for (label i = 0; i < this->nSpecie() - 1; i++) {
-        this->Y_[i] = max(TYp[i + 1], 0.0);
-        Ysum += this->Y_[i];
+
+    yToPyJac[0] = TYp[0];
+    for (label i = 1; i < this->nSpecie(); i++) {
+        yToPyJac[i] = max(TYp[i], 0);
     }
-    this->Y_[this->nSpecie() - 1] = 1.0 - Ysum; // The last specie
-
-    yToPyJac[0] = T;
-    // i=1->nSpecie are mass fractions
-    for (label i = 1; i < this->nSpecie(); i++) { yToPyJac[i] = this->Y_[i - 1]; }
-    // The last specie
-    yToPyJac[this->nSpecie()] = this->Y_[this->nSpecie() - 1];
-
+    
     // call pyJac RHS function
-    dydt(0, p, yToPyJac.data(), dy.data());
-    for (label i = 0; i < this->nSpecie(); i++) { dTYpdt[i] = dy[i]; }
+    dydt(0, p, yToPyJac.begin(), dTYpdt.begin());
+
     // dp/dt = 0
     dTYpdt[this->nSpecie()] = 0.0;
 }
