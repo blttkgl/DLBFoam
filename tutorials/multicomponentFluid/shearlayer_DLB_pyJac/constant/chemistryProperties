@@ -14,7 +14,17 @@ FoamFile
     object          chemistryProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-#includeEtc "caseDicts/solvers/chemistry/TDAC/chemistryProperties.cfg"
+
+// Uncomment to enable ISAT tabulation
+// #includeEtc "caseDicts/solvers/chemistry/TDAC/chemistryProperties.cfg"
+// 
+// #remove         reduction
+// 
+// tabulation
+// {
+//     method	ISAT_pyJac;
+// }
+
 refmapping
 {
     active          true;
@@ -56,16 +66,9 @@ odeCoeffs
     absTol          1e-08;
     relTol          1e-05;
 }
-reduction
-{
-}
-
-tabulation
-{
-	method	ISAT_pyJac;
-}
 
 reactions
 {
 }
+
 // ************************************************************************* //

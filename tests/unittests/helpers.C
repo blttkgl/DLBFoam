@@ -17,9 +17,12 @@ Foam::DynamicList<Foam::ChemistryProblem> create_random_problems(size_t count) {
         p.c          = random_double(0.0, 1.0);
         p.Ti         = random_double(0.0, 1.0);
         p.pi         = random_double(0.0, 1.0);
+        p.rhoi       = random_double(0.0, 1.0);
         p.deltaTChem = random_double(0.0, 1.0);
+        p.deltaT     = random_double(0.0, 1.0);
         p.cellid     = i;
         p.cpuTime    = random_double(0.0, 1.0);
+        p.procNo     = i;
         problems.append(p);
     }
 

@@ -16,11 +16,7 @@ chemistrySolver/DLBnoChemistrySolvers.C
 chemistrySolver/DLBodeChemistrySolvers.C
 chemistrySolver/DLBodePyJacChemistrySolvers.C
 
-
 chemistryModel/loadBalanced_pyJacChemistryModel/tabulation_pyJac/ISAT_pyJac/ISAT_pyJac.C
-chemistryModel/loadBalanced_pyJacChemistryModel/tabulation_pyJac/ISAT_pyJac/chemPointISAT_pyJac/chemPointISAT_pyJac.C
-chemistryModel/loadBalanced_pyJacChemistryModel/tabulation_pyJac/ISAT_pyJac/binaryNode_pyJac/binaryNode_pyJac.C
-chemistryModel/loadBalanced_pyJacChemistryModel/tabulation_pyJac/ISAT_pyJac/binaryTree_pyJac/binaryTree_pyJac.C
 
 
 LIB = $(FOAM_USER_LIBBIN)/libchemistryModel_DLB

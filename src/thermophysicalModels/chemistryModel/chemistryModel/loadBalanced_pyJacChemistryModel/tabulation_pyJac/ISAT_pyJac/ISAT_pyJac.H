@@ -41,11 +41,13 @@ Description
 #ifndef ISAT_pyJac_H
 #define ISAT_pyJac_H
 
-#include "chemistryTabulationMethod.H"
-#include "binaryTree_pyJac.H"
-#include "volFields.H"
-#include "OFstream.H"
-#include "cpuTime.H"
+// #include "chemistryTabulationMethod.H"
+// #include "binaryTree_pyJac.H"
+// #include "volFields.H"
+// #include "OFstream.H"
+// #include "cpuTime.H"
+#include "ISAT.H"
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -59,7 +61,7 @@ namespace chemistryTabulationMethods
 
 class ISAT_pyJac
 :
-    public chemistryTabulationMethod
+    public ISAT
 {
     // Private Data
 
@@ -70,8 +72,11 @@ class ISAT_pyJac
         //- Switch to select performance logging
         Switch log_;
 
+        //- Is reduction applied to the state vectors
+        const bool reduction_; // = false, because not implemented
+
         //- List of the stored 'points' organised in a binary tree
-        binaryTree_pyJac chemisTree_;
+        binaryTree chemisTree_;
 
         //- List of scale factors for species, temperature and pressure
         scalarField scaleFactor_;
@@ -100,13 +105,13 @@ class ISAT_pyJac
         Switch MRURetrieve_;
 
         //- Most Recently Used (MRU) list of chemPoint
-        SLList<chemPointISAT_pyJac*> MRUList_;
+        SLList<chemPointISAT*> MRUList_;
 
         //- Maximum size of the MRU list
         label maxMRUSize_;
 
-        //- Store a pointer to the last chemPointISAT_pyJac found
-        chemPointISAT_pyJac* lastSearch_;
+        //- Store a pointer to the last chemPointISAT found
+        chemPointISAT* lastSearch_;
 
         //- Switch to allow growth (on by default)
         Switch growPoints_;
@@ -149,7 +154,7 @@ class ISAT_pyJac
     // Private Member Functions
 
         //- Add a chemPoint to the MRU list
-        void addToMRU(chemPointISAT_pyJac* phi0);
+        void addToMRU(chemPointISAT* phi0);
 
         //- Compute and return the mapping of the composition phiq
         //  Input : phi0 the nearest chemPoint used in the linear interpolation
@@ -160,7 +165,7 @@ class ISAT_pyJac
         //  Rphiq = Rphi0 + A * (phiq-phi0)
         void calcNewC
         (
-            chemPointISAT_pyJac* phi0,
+            chemPointISAT* phi0,
             const scalarField& phiq,
             scalarField& Rphiq
         );
@@ -174,7 +179,7 @@ class ISAT_pyJac
         //  Output: true if phiq is in the EOA, false if not
         bool grow
         (
-            chemPointISAT_pyJac* phi0,
+            chemPointISAT* phi0,
             const scalarField& phiq,
             const scalarField& Rphiq
         );
@@ -235,19 +240,19 @@ public:
         }
 
         //- Return true if reduction is applied to the state variables
-        /*
+
         bool reduction() const
         {
-            return reduction_;
+            // Not implemented
+            return false;
         }
-        */
-        //TODO: Add a warning for reduction incompatibility
+
         const odeChemistryModel& chemistry()
         {
             return chemistry_;
         }
 
-        inline binaryTree_pyJac& chemisTree()
+        inline binaryTree& chemisTree()
         {
             return chemisTree_;
         }
