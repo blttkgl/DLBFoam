@@ -73,6 +73,12 @@ private:
         // Field containing chemistry CPU time information
         volScalarField cpuTimes_;
 
+        // Skip species flag
+        Switch  skipSpecies_;
+
+        Switch resetSkipSpecies_;
+
+        const scalar skipThreshold_;
         // Field containing reference mapping information
         // 0 -> reference solution
         // 1 -> mapped from reference solution
@@ -87,6 +93,18 @@ private:
 
         //- Tabulation method reference
         chemistryTabulationMethod& tabulation_;
+
+    	//- Optional start time for chemistry calculation
+	    const scalar startTime_;
+
+	    //- Optional end time for chemistry calculation
+	    const scalar endTime_;
+
+        //- Optional begin time for the chemistry calculation
+        const scalar begin_;
+
+	    //- Optional repetition period
+	    const scalar repeat_;
 
     // Private Member Functions
 
@@ -188,6 +206,12 @@ public:
 
 	//- Return non const access to the chemical source terms
         inline volScalarField::Internal& RR(const label i);
+
+    //- Calculate the time for chemistry activation/deactivation
+        inline scalar timeValue() const;
+
+    //- Chemistry activation switch
+        inline Switch chemistry() const;
 
     // Member Operators
 

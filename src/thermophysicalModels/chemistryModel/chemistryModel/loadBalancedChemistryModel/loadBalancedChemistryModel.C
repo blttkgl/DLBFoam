@@ -49,6 +49,9 @@ Foam::loadBalancedChemistryModel<ThermoType>::
             this->mesh(),
             scalar(0.0)
         ),
+        skipSpecies_(this->lookupOrDefault("skipSpecies", false)),
+        resetSkipSpecies_(false),
+        skipThreshold_(this->lookupOrDefault("skipThreshold", 1e-5)),
         refMap_
         (
             IOobject
@@ -63,7 +66,19 @@ Foam::loadBalancedChemistryModel<ThermoType>::
             scalar(0.0)
         ),
         tabulationPtr_(chemistryTabulationMethod::New(*this, *this)),
-        tabulation_(*tabulationPtr_)
+        tabulation_(*tabulationPtr_),
+        startTime_(this->lookupOrDefault("startTime", -great)),
+        endTime_(this->lookupOrDefault("endTime", great)),
+        begin_
+        (
+            this->lookupOrDefault
+            (
+                "begin",
+                unitNone,
+                this->time().beginTime().value()
+            )
+        ),
+        repeat_(this->lookupOrDefault("repeat", unitNone, 0))
     {
         if(balancer_.log())
         {
@@ -150,7 +165,49 @@ Foam::scalar Foam::loadBalancedChemistryModel<ThermoType>::solve
     scalar t_solveBuffer(0);
     scalar t_unbalance(0);
 
-    if(!this->chemistry_)
+    if(!chemistry() && skipSpecies_)
+    {
+        for(label i = 0; i < this->nSpecie(); i++)
+        {
+            if(i == this->thermo().defaultSpecie())
+            {
+                continue;
+            }
+
+            const scalar maxY = gMax(this->Y()[i].oldTime());
+
+            if(maxY < skipThreshold_)
+            {
+                this->thermo().setSpecieInactive(i);
+            }
+            else
+            {
+                this->thermo().setSpecieActive(i);
+            }
+        }
+    }
+    else
+    {
+        resetSkipSpecies_ = true;
+    }
+
+    if (chemistry() && resetSkipSpecies_)
+    {
+        for(label i = 0; i < this->nSpecie(); i++)
+        {
+            if(i == this->thermo().defaultSpecie())
+            {
+                continue;
+            }
+            else
+            {
+                this->thermo().setSpecieActive(i);
+            }
+            resetSkipSpecies_ = false;
+        }
+    }
+
+    if(!chemistry())
     {
         return great;
     }

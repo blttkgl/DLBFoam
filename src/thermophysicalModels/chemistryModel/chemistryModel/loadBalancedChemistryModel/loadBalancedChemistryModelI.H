@@ -56,4 +56,31 @@ Foam::loadBalancedChemistryModel<ThermoType>::RR(const label i) {
     return rr[i];
 }
 
+template <class ThermoType>
+inline Foam::scalar Foam::loadBalancedChemistryModel<ThermoType>::timeValue() const
+{
+    if (repeat_ > 0)
+    {
+        return begin_ + fmod(this->time().userTimeValue() - begin_, repeat_);
+    }
+    else
+    {
+        return this->time().userTimeValue();
+    }
+}
+
+template <class ThermoType>
+inline Foam::Switch Foam::loadBalancedChemistryModel<ThermoType>::chemistry() const
+{
+    if
+    (
+        timeValue() < startTime_
+     || timeValue() > endTime_
+    )
+    {
+        return false;
+    }
+    return this->chemistry_;
+}
+
 // ************************************************************************* //
