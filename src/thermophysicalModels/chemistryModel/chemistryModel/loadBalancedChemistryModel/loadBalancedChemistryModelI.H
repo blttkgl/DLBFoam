@@ -72,15 +72,35 @@ inline Foam::scalar Foam::loadBalancedChemistryModel<ThermoType>::timeValue() co
 template <class ThermoType>
 inline Foam::Switch Foam::loadBalancedChemistryModel<ThermoType>::chemistry() const
 {
-    if
-    (
-        timeValue() < startTime_
-     || timeValue() > endTime_
-    )
+    Foam::scalar currentTime = timeValue();
+
+    // Check if endTime_ is over the repeat period (wrap-around case)
+    if (startTime_ < endTime_)
     {
-        return false;
+        // Normal case: check if currentTime is within startTime_ and endTime_
+        if (currentTime >= startTime_ && currentTime <= endTime_)
+        {
+            return this->chemistry_;
+        }
+        else
+        {
+            return false;
+        }
     }
-    return this->chemistry_;
+    else
+    {
+        // Wrap-around case: active period spans from startTime_ to end of repeat, then from 0 to endTime_
+        if (currentTime >= startTime_ || currentTime <= endTime_)
+        {
+            return this->chemistry_;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    return false;
 }
 
 // ************************************************************************* //
