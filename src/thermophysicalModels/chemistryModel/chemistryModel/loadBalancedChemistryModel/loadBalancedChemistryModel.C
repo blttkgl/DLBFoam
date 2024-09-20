@@ -92,6 +92,27 @@ Foam::loadBalancedChemistryModel<ThermoType>::
                             << "               rank ID" << endl;
         }
 
+        if(skipSpecies_)
+        {
+            forAll(this->Y(), i)
+            {
+                typeIOobject<volScalarField> header
+                (
+                    this->Y()[i].name(),
+                    this->mesh().time().name(),
+                    this->mesh(),
+                    IOobject::NO_READ
+                );
+
+                // Check if the species file is provided, if not set inactive
+                // and NO_WRITE
+                if (!header.headerOk())
+                {
+                    this->thermo().setSpecieInactive(i);
+                }
+            }
+        }
+
     }
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -201,17 +222,21 @@ Foam::scalar Foam::loadBalancedChemistryModel<ThermoType>::solve
             }
             else
             {
-                this->thermo().setSpecieActive(i);
+                if(!this->thermo().speciesActive()[i])
+                {
+                    this->thermo().setSpecieActive(i);
+                }
             }
-            resetSkipSpecies_ = false;
+
         }
+        resetSkipSpecies_ = false;
     }
+    this->thermo().syncSpeciesActive();
 
     if(!chemistry())
     {
         return great;
     }
-
     timer.timeIncrement();
     DynamicList<ChemistryProblem> allProblems = getProblems(deltaT);
     t_getProblems = timer.timeIncrement();
