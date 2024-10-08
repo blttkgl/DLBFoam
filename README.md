@@ -25,7 +25,7 @@ details can be found in our paper [[1]](#1). In addition, the cell-wise chemistr
 ![crab pet](https://i.imgur.com/yYVBgHV.gif)
 
 ## Prerequisites
-- OpenFOAM installation (with correct version)
+- OpenFOAM installation. [dev](https://github.com/OpenFOAM/OpenFOAM-dev) and three latest official releases are maintaned in corresponding branches. You can find older versions under tags and releases.
 - LAPACK (Intel-MKL, OpenBLAS or standalone)
 - Cmake
 - [ct2foam](https://github.com/kahilah/ct2foam) (Optional)
