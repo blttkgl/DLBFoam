@@ -61,6 +61,9 @@ class loadBalancedChemistryModel
     public chemistryModel<ThermoType>
 {
 
+protected:
+        // Skip species flag
+        Switch  skipSpecies_;
 private:
     // Private member data
 
@@ -73,8 +76,7 @@ private:
         // Field containing chemistry CPU time information
         volScalarField cpuTimes_;
 
-        // Skip species flag
-        Switch  skipSpecies_;
+
 
         Switch resetSkipSpecies_;
 

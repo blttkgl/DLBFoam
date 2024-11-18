@@ -34,6 +34,7 @@ Foam::loadBalancedChemistryModel<ThermoType>::
     loadBalancedChemistryModel(const fluidMulticomponentThermo& thermo)
     :
         chemistryModel<ThermoType>(thermo),
+        skipSpecies_(this->lookupOrDefault("skipSpecies", false)),
         balancer_(createBalancer()),
         mapper_(createMapper(this->thermo())),
         cpuTimes_
@@ -49,7 +50,6 @@ Foam::loadBalancedChemistryModel<ThermoType>::
             this->mesh(),
             scalar(0.0)
         ),
-        skipSpecies_(this->lookupOrDefault("skipSpecies", false)),
         resetSkipSpecies_(false),
         skipThreshold_(this->lookupOrDefault("skipThreshold", 1e-5)),
         refMap_
@@ -111,6 +111,7 @@ Foam::loadBalancedChemistryModel<ThermoType>::
                     this->thermo().setSpecieInactive(i);
                 }
             }
+            this->thermo().syncSpeciesActive();
         }
 
     }
@@ -235,6 +236,19 @@ Foam::scalar Foam::loadBalancedChemistryModel<ThermoType>::solve
 
     if(!chemistry())
     {
+        const volScalarField& rho0vf =
+        this->mesh().template lookupObject<volScalarField>
+        (
+            this->thermo().phasePropertyName("rho")
+        ).oldTime();
+
+        forAll(rho0vf, celli)
+        {
+            for(label j = 0; j < this->nSpecie(); j++)
+            {
+                this->RR(j)[celli] = 0.0;
+            }
+        }
         return great;
     }
     timer.timeIncrement();
