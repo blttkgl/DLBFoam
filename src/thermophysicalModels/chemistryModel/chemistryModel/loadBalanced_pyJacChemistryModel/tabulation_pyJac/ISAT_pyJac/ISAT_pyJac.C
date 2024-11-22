@@ -49,7 +49,9 @@ Foam::chemistryTabulationMethods::ISAT_pyJac::ISAT_pyJac
     const odeChemistryModel& chemistry
 )
 :
-    chemistryTabulationMethod
+    // Unfortunatly, all these variables are stored twice, because this is
+    // the only constructor provided in ISAT
+    ISAT
     (
         chemistryProperties,
         chemistry
@@ -57,6 +59,7 @@ Foam::chemistryTabulationMethods::ISAT_pyJac::ISAT_pyJac
     coeffsDict_(chemistryProperties.subDict("tabulation")),
     chemistry_(chemistry),
     log_(coeffsDict_.lookupOrDefault<Switch>("log", false)),
+    reduction_(false),
     chemisTree_(*this, coeffsDict_),
     scaleFactor_(chemistry.nSpecie()+2, 1), // Change the scalefactor for Nsp-1 + T + p + deltaT
     runTime_(chemistry.time()),
@@ -110,9 +113,19 @@ Foam::chemistryTabulationMethods::ISAT_pyJac::ISAT_pyJac
         chemistry.mesh(),
         scalar(0)
     ),
-
+    // tabulationResults_( // Idea: take it from parent class (reuse=True)
+    //     chemistry.mesh().lookupObject<volScalarField::Internal>(
+    //         "TabulationResults"
+    //     ), 
+    //     true
+    // ),
     cleaningRequired_(false)
 {
+    if (chemistry_.reduction()) {
+        FatalErrorInFunction
+            << "Reduction is not implemented"
+            << exit(FatalError);
+    }
     dictionary scaleDict(coeffsDict_.subDict("scaleFactor"));
     label Ysize = chemistry_.Y().size()-1;  //pyJac indexing
     scalar otherScaleFactor = scaleDict.lookup<scalar>("otherSpecies");
@@ -134,10 +147,10 @@ Foam::chemistryTabulationMethods::ISAT_pyJac::ISAT_pyJac
 
     if (log_)
     {
-        nRetrievedFile_ = chemistry.logFile("found_isat_pyJac.out");
-        nGrowthFile_ = chemistry.logFile("growth_isat_pyJac.out");
-        nAddFile_ = chemistry.logFile("add_isat_pyJac.out");
-        sizeFile_ = chemistry.logFile("size_isat_pyJac.out");
+        nRetrievedFile_ = chemistry.logFile("found_isat.out");
+        nGrowthFile_ = chemistry.logFile("growth_isat.out");
+        nAddFile_ = chemistry.logFile("add_isat.out");
+        sizeFile_ = chemistry.logFile("size_isat.out");
 
         cpuAddFile_ = chemistry.logFile("cpu_add.out");
         cpuGrowFile_ = chemistry.logFile("cpu_grow.out");
@@ -156,14 +169,14 @@ Foam::chemistryTabulationMethods::ISAT_pyJac::~ISAT_pyJac()
 
 void Foam::chemistryTabulationMethods::ISAT_pyJac::addToMRU
 (
-    chemPointISAT_pyJac* phi0
+    chemPointISAT* phi0
 )
 {
     if (maxMRUSize_ > 0 && MRURetrieve_)
     {
         // First search if the chemPoint is already in the list
         bool isInList = false;
-        typename SLList <chemPointISAT_pyJac*>::iterator iter =
+        typename SLList <chemPointISAT*>::iterator iter =
             MRUList_.begin();
         for ( ; iter != MRUList_.end(); ++iter)
         {
@@ -203,12 +216,13 @@ void Foam::chemistryTabulationMethods::ISAT_pyJac::addToMRU
 
 void Foam::chemistryTabulationMethods::ISAT_pyJac::calcNewC
 (
-    chemPointISAT_pyJac* phi0,
+    chemPointISAT* phi0,
     const scalarField& phiq,
     scalarField& Rphiq
 )
 {
     const label nEqns = chemistry_.nSpecie() + 1; // Species-1, T, p, does that make sense?
+    const List<label>& completeToSimplified = phi0->completeToSimplifiedIndex();
 
     const scalarField dphi(phiq - phi0->phi());
     const scalarSquareMatrix& gradientsMatrix = phi0->A();
@@ -222,12 +236,40 @@ void Foam::chemistryTabulationMethods::ISAT_pyJac::calcNewC
     Rphiq = phi0->Rphi();
     for (label i=0; i<nEqns - 2; i++)
     {
-
-        // TODO: Add an error here that reduction is not supported
-        // Extrapolate using the gradients matrix
-        for (label j=0; j<nEqns + 1; j++)
+        if (reduction_)
         {
-            Rphiq[i] += gradientsMatrix(i, j)*dphi[j];
+            const label si = completeToSimplified[i];
+
+            if (si != -1)
+            {
+                // If specie is active, or T or p, then extrapolate using the
+                // gradients matrix
+                for (label j=0; j<nEqns + 1; j++)
+                {
+                    const label sj =
+                        j < nEqns - 2
+                      ? completeToSimplified[j]
+                      : j - (nEqns - 2) + phi0->nActive();
+
+                    if (sj != -1)
+                    {
+                        Rphiq[i] += gradientsMatrix(si, sj)*dphi[j];
+                    }
+                }
+            }
+            else
+            {
+                // If specie is inactive then use the tabulated value directly
+                Rphiq[i] += dphi[i];
+            }
+        }
+        else
+        {        
+            // Extrapolate using the gradients matrix
+            for (label j=0; j<nEqns + 1; j++)
+            {
+                Rphiq[i] += gradientsMatrix(i, j)*dphi[j];
+            }
         }
 
         // Clip
@@ -238,7 +280,7 @@ void Foam::chemistryTabulationMethods::ISAT_pyJac::calcNewC
 
 bool Foam::chemistryTabulationMethods::ISAT_pyJac::grow
 (
-    chemPointISAT_pyJac* phi0,
+    chemPointISAT* phi0,
     const scalarField& phiq,
     const scalarField& Rphiq
 )
@@ -279,10 +321,10 @@ bool Foam::chemistryTabulationMethods::ISAT_pyJac::cleanAndBalance()
 
     // Check all chemPoints to see if we need to delete some of the chemPoints
     // according to the elapsed time and number of growths
-    chemPointISAT_pyJac* x = chemisTree_.treeMin();
+    chemPointISAT* x = chemisTree_.treeMin();
     while(x != nullptr)
     {
-        chemPointISAT_pyJac* xtmp = chemisTree_.treeSuccessor(x);
+        chemPointISAT* xtmp = chemisTree_.treeSuccessor(x);
 
         const scalar elapsedTimeSteps = timeSteps() - x->timeTag();
 
@@ -324,7 +366,7 @@ void Foam::chemistryTabulationMethods::ISAT_pyJac::computeA
     const scalar dt
 )
 {
-
+    Info << "Computing A matrix for ISAT_pyJac" << endl;
     // Prepare the vector order for the pyJac version by alternating the T order in Rcq
     const label nSpecie = chemistry_.nSpecie() - 1; // Note the pyJac indexing
 
@@ -425,7 +467,7 @@ bool Foam::chemistryTabulationMethods::ISAT_pyJac::retrieve
     }
 
     bool retrieved(false);
-    chemPointISAT_pyJac* phi0;
+    chemPointISAT* phi0;
 
     // If the tree is not empty
     if (chemisTree_.size())
@@ -449,7 +491,7 @@ bool Foam::chemistryTabulationMethods::ISAT_pyJac::retrieve
         {
             typename SLList
             <
-                chemPointISAT_pyJac*
+                chemPointISAT*
             >::iterator iter = MRUList_.begin();
 
             for ( ; iter != MRUList_.end(); ++iter)
@@ -545,20 +587,20 @@ Foam::label Foam::chemistryTabulationMethods::ISAT_pyJac::add
         // It can be partially rebuild with the MRU list if this is used.
         if (!cleanAndBalance())
         {
-            DynamicList<chemPointISAT_pyJac*> tempList;
+            DynamicList<chemPointISAT*> tempList;
             if (maxMRUSize_>0)
             {
-                // Create a copy of each chemPointISAT_pyJac of the MRUList_ before
+                // Create a copy of each chemPointISAT of the MRUList_ before
                 // they are deleted
                 typename SLList
                 <
-                    chemPointISAT_pyJac*
+                    chemPointISAT*
                 >::iterator iter = MRUList_.begin();
                 for ( ; iter != MRUList_.end(); ++iter)
                 {
                     tempList.append
                     (
-                        new chemPointISAT_pyJac(*iter())
+                        new chemPointISAT(*iter())
                     );
                 }
             }
@@ -569,7 +611,7 @@ Foam::label Foam::chemistryTabulationMethods::ISAT_pyJac::add
 
             // Construct the tree without giving a reference to attach to it
             // since the structure has been completely discarded
-            chemPointISAT_pyJac* nulPhi = 0;
+            chemPointISAT* nulPhi = 0;
             forAll(tempList, i)
             {
                 chemisTree().insertNewLeaf
@@ -606,7 +648,7 @@ Foam::label Foam::chemistryTabulationMethods::ISAT_pyJac::add
         tolerance_,
         scaleFactor_.size(),
         nActive,
-        lastSearch_ // lastSearch_ may be nullptr (handled by binaryTree_pyJac_pyJac)
+        lastSearch_ // lastSearch_ may be nullptr (handled by binaryTree)
     );
     if (lastSearch_ != nullptr)
     {

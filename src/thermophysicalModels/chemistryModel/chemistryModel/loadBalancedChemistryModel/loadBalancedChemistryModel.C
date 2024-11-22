@@ -314,7 +314,8 @@ void Foam::loadBalancedChemistryModel<ThermoType>::solveSingle
 ) const
 {
     scalar timeLeft = problem.deltaT;
-    scalarField c0 = problem.c;
+
+    scalarField Y0 = problem.Y;
     solution.cellid = problem.cellid;
 
     // Timer begins
@@ -335,7 +336,7 @@ void Foam::loadBalancedChemistryModel<ThermoType>::solveSingle
                 this->solve(
                     problem.pi,
                     problem.Ti,
-                    problem.c,
+                    problem.Y,
                     problem.cellid,
                     dt,
                     problem.deltaTChem);
@@ -358,7 +359,7 @@ void Foam::loadBalancedChemistryModel<ThermoType>::solveSingle
             this->solve(
                 problem.pi,
                 problem.Ti,
-                problem.c,
+                problem.Y,
                 problem.cellid,
                 dt,
                 problem.deltaTChem);
@@ -366,7 +367,8 @@ void Foam::loadBalancedChemistryModel<ThermoType>::solveSingle
         }
         solution.deltaTChem = problem.deltaTChem;
     }
-    solution.rr = (problem.c - c0) * problem.rhoi / problem.deltaT;
+
+    solution.rr = (problem.Y - Y0) * problem.rhoi / problem.deltaT;
     // Timer ends
     solution.cpuTime = time.timeIncrement();
 }
@@ -505,7 +507,7 @@ Foam::loadBalancedChemistryModel<ThermoType>::getProblems
             }
 
             ChemistryProblem problem;
-            problem.c = massFraction;
+            problem.Y = massFraction;
             problem.Ti = T[celli];
             problem.pi = p[celli];
             problem.rhoi = rho0vf[celli];
@@ -603,7 +605,7 @@ bool Foam::loadBalancedChemistryModel<ThermoType>::retrieveProblem
 {
     for (label i=0; i<this->nEqns()-2; i++)
     {
-        phiq[i] = problem.c[i];
+        phiq[i] = problem.Y[i];
     }
     phiq[phiq.size()-3] = problem.Ti;
     phiq[phiq.size()-2] = problem.pi;
@@ -612,15 +614,15 @@ bool Foam::loadBalancedChemistryModel<ThermoType>::retrieveProblem
     if(tabulation_.retrieve(phiq,Rphiq))
     {
         // Retrieved solution stored in Rphiq
-        scalar csum = 0.0;
+        scalar Ysum = 0.0;
         for (label i=0; i<this->nEqns()-2; i++)
         {
-            problem.c[i] = Rphiq[i];
-            csum+=Rphiq[i];
+            problem.Y[i] = Rphiq[i];
+            Ysum+=Rphiq[i];
         }
         if(this->nEqns() == this->nSpecie()+1)      // check if you are operating with pyJac solver (nEqns=nSpecie+1)
         {
-            problem.c[this->nSpecie()-1] = 1.0-csum;
+            problem.Y[this->nSpecie()-1] = 1.0-Ysum;
         }
         return true;
     }
@@ -640,7 +642,7 @@ void Foam::loadBalancedChemistryModel<ThermoType>::tabulateProblem
 
         for (label i=0; i<this->nEqns()-2; i++)
         {
-            Rphiq[i] = problem.c[i];
+            Rphiq[i] = problem.Y[i];
         }
         Rphiq[Rphiq.size()-3] = problem.Ti;
         Rphiq[Rphiq.size()-2] = problem.pi;

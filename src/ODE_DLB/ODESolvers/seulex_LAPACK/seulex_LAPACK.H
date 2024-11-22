@@ -51,14 +51,12 @@ SourceFiles
 #include "labelField.H"
 
 
-#ifdef MKL_ILP64
+#ifdef MKL_LP64
 #include "mkl_lapack.h"
-#define lapack_int long long int
 #else
 #include "lapacke.h"
-#define lapack_int int
 #endif
-
+#define lapack_int int
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam

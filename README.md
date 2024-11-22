@@ -1,9 +1,9 @@
 # DLBFoam: Dynamic load balancing for fast reactive simulations
 ![v1.1](https://img.shields.io/badge/DLBFoam-v1.1-blue)
-![OpenFOAM 12](https://img.shields.io/badge/OpenFOAM-12-brightgreen)
+
+![OpenFOAM dev](https://img.shields.io/badge/OpenFOAM-dev_20240707-brightgreen)
 
 [<img src="https://img.shields.io/badge/-YouTube_Video_Tutorials-red?style=for-the-badge&logo=youtube&logoColor=white"/>](https://www.youtube.com/playlist?list=PLXqVaOXSsv1SBnfyGRa_C-E0X--FIT27P)
-
 
 ## DLBFoam v1.1 - What's new?
 DLBFoam v1.1 introduces a fully analytical chemistry Jacobian via [pyJac](https://github.com/SLACKHA/pyJac), and optimized ODE solution routines via [LAPACK](http://www.netlib.org/lapack/). Combined with the load balancing features, v1.1 provides up to x250 speed-up compared to standard OpenFOAM chemistry model. If you are interested with using only dynamic load balancing without any third party dependency, please use [DLBFoam v1.0](https://github.com/blttkgl/DLBFoam-1.0).
@@ -26,7 +26,7 @@ details can be found in our paper [[1]](#1). In addition, the cell-wise chemistr
 ![crab pet](https://i.imgur.com/yYVBgHV.gif)
 
 ## Prerequisites
-- OpenFOAM installation (with correct version)
+- OpenFOAM installation. [dev](https://github.com/OpenFOAM/OpenFOAM-dev) and three latest official releases are maintaned in corresponding branches. You can find older versions under tags and releases.
 - LAPACK (Intel-MKL, OpenBLAS or standalone)
 - Cmake
 - [ct2foam](https://github.com/kahilah/ct2foam) (Optional)
@@ -155,6 +155,7 @@ Subsequent cells following the same condition are mapped from this reference sol
 between reference solution and other reference cells and ensures:
 abs(T<sub>cell</sub>-T<sub>ref</sub>)<deltaT.
 
+* (Optional) In-situ adaptive tabulation (ISAT) is compatible with DLBFoam since OpenFOAM 12. Check commented out section in [chemistryProperties](tutorials/multicomponentFluid/shearlayer_DLB_pyJac/constant/chemistryProperties) of `shearlayer_DLB_pyJac` tutorial for an example.
 
 * Run the case normally with OpenFOAM's reactive solvers.
 

@@ -194,7 +194,7 @@ public:
         (
             scalar&      p,
             scalar&      T,
-            scalarField& c,
+            scalarField& dYTp,
             const label  li,
             scalar&      deltaT,
             scalar&      subDeltaT

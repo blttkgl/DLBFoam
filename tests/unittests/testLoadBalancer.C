@@ -84,7 +84,7 @@ TEST_CASE("LoadBalancer getOperations"){
         auto loads = create_random_load(i);
 
         for (size_t j = 0; j < i; ++j){
-            REQUIRE_NOTHROW(globalTest::getOperations(loads, loads[i]));
+            REQUIRE_NOTHROW(globalTest::getOperations(loads, loads[j]));
         }
 
     }
