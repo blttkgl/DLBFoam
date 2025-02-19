@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 NC='\e[0m' # No Color
 GREEN='\e[1;32m'
 YELLOW='\e[1;33m'

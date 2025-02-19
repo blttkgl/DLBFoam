@@ -58,7 +58,7 @@ struct ChemistrySolution
         return !(*this == rhs);
     }
 
-    scalarField rr; // =   (c_{i+1} - c_{i}) * rhoi / deltaT;
+    scalarField rr; // =   (Y_{i+1} - Y_{i}) * rhoi / deltaT;
     scalar deltaTChem;
     scalar cpuTime;
     label cellid;

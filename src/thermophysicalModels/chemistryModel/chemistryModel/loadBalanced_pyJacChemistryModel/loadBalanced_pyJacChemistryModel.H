@@ -82,19 +82,18 @@ public:
     
     //- Override jacobian and derivatives function from chemistryModel
     virtual void jacobian(const scalar        t,
-                          const scalarField&  c,
+                          const scalarField&  TYp,
                           const label         li,
-                          scalarField&        dcdt,
+                          scalarField&        dTYpdt,
                           scalarSquareMatrix& J) const override;
 
     virtual void derivatives(const scalar       t,
-                             const scalarField& c,
+                             const scalarField& TYp,
                              const label        li,
-                             scalarField&       dcdt) const override;
+                             scalarField&       dTYpdt) const override;
 
     //- Override Qdot function from chemistryModel for using pyJac's enthalpy of formation
     virtual tmp<volScalarField> Qdot() const override;
-
 
     //- Override tc function from chemistryModel for using calculating chemical time scale
     //- via pyJac
@@ -103,7 +102,7 @@ public:
 
 private:
     //- Temporary concentration field
-    mutable scalarField c_;
+    mutable scalarField Y_;
 
     ///
     ///@brief List of enthalpy of formation from pyJac

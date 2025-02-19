@@ -33,7 +33,7 @@ Foam::ode_pyJac<ChemistryModel>::ode_pyJac(const fluidMulticomponentThermo& ther
     chemistrySolver<ChemistryModel>(thermo),
     coeffsDict_(this->subDict("odeCoeffs")),
     odeSolver_(ODESolver::New(*this, coeffsDict_)),
-    cTp_(this->nEqns())
+    YTp_(this->nEqns())
 {}
 
 
@@ -51,7 +51,7 @@ void Foam::ode_pyJac<ChemistryModel>::solve
 (
     scalar& p,
     scalar& T,
-    scalarField& c,
+    scalarField& Y,
     const label li,
     scalar& deltaT,
     scalar& subDeltaT
@@ -61,7 +61,7 @@ void Foam::ode_pyJac<ChemistryModel>::solve
     // reduction is active
     if (odeSolver_->resize())
     {
-        odeSolver_->resizeField(cTp_);
+        odeSolver_->resizeField(YTp_);
     }
 
     const label nSpecie = this->nSpecie();
@@ -72,19 +72,19 @@ void Foam::ode_pyJac<ChemistryModel>::solve
         // Copy the concentration, T and P to the total solve-vector
         for (label i=0; i<nSpecie; i++)
         {
-            cTp_[i] = c[i];
+            YTp_[i] = Y[i];
         }
-        cTp_[nSpecie] = T;
-        cTp_[nSpecie+1] = p;
+        YTp_[nSpecie] = T;
+        YTp_[nSpecie+1] = p;
 
-        odeSolver_->solve(0, deltaT, cTp_, li, subDeltaT);
+        odeSolver_->solve(0, deltaT, YTp_, li, subDeltaT);
 
         for (label i=0; i<nSpecie; i++)
         {
-            c[i] = max(0.0, cTp_[i]);
+            Y[i] = max(0.0, YTp_[i]);
         }
-        T = cTp_[nSpecie];
-        p = cTp_[nSpecie+1];
+        T = YTp_[nSpecie];
+        p = YTp_[nSpecie+1];
     }
     /* pyJac implementation:                                                            */
     /* Because pyJac does not consider the last specie in the system, it is not part of */
@@ -92,27 +92,27 @@ void Foam::ode_pyJac<ChemistryModel>::solve
     else
     {
         // Copy the concentration, T and P to the total solve-vector
-        cTp_[0] = T;
-        cTp_[nSpecie] = p;
+        YTp_[0] = T;
+        YTp_[nSpecie] = p;
 
         for (label i=0; i<nSpecie-1; i++)
         {
-            cTp_[i+1] = c[i];
+            YTp_[i+1] = Y[i];
         }
 
-        odeSolver_->solve(0, deltaT, cTp_, li, subDeltaT);
+        odeSolver_->solve(0, deltaT, YTp_, li, subDeltaT);
 
-        T = cTp_[0];
-        p = cTp_[nSpecie];
-        scalar csum = 0;
+        T = YTp_[0];
+        p = YTp_[nSpecie];
+        scalar Ysum = 0;
 
         for (label i=0; i<nSpecie-1; i++)
         {
-            c[i] = max(0.0, cTp_[i+1]);
-    	    csum += c[i];
+            Y[i] = max(0.0, YTp_[i+1]);
+    	    Ysum += Y[i];
         }
         //The last specie:
-        c[nSpecie-1] = 1.0 - csum;
+        Y[nSpecie-1] = 1.0 - Ysum;
     }
 }
 

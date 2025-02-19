@@ -28,16 +28,18 @@ Description
 
 \*---------------------------------------------------------------------------*/
 
+#include "argList.H"
 #include "zeroDimensionalFvMesh.H"
 #include "fluidMulticomponentThermo.H"
 #include "basicChemistryModel.H"
 #include "multicomponentMixture.H"
 #include "chemistrySolver.H"
-#include "physicoChemicalConstants.H"
 #include "OFstream.H"
 #include "cellModeller.H"
 #include "thermoTypeFunctions.H"
-#include "argList.H"
+#include "physicoChemicalConstants.H"
+#include "fvcFlux.H"
+#include "fvmDdt.H"
 
 #include <iostream>
 #include <vector>
@@ -46,9 +48,6 @@ Description
 extern "C" {
     #include "chem_utils.h"
 };
-#include "fvcFlux.H"
-
-#include "fvmDdt.H"
 
 using namespace Foam;
 
@@ -168,7 +167,7 @@ int main(int argc, char *argv[])
         #include "initPSR.H"
 
         bool Hcheck0a = validatePyjacEnthalpy(Y, 298.15, -256579.71591916375, 1e-7);
-        bool Hcheck0b = validatePyjacEnthalpy(Y, 298.15, thermo.ha().ref()[0] - thermo.he()[0], 1e-6);
+        bool Hcheck0b = validatePyjacEnthalpy(Y, 298.15, thermo.ha().ref()[0]-thermo.hs().ref()[0], 1e-6);
 
         #include "solveChemistry.H"
 

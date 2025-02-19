@@ -35,7 +35,7 @@ template <class ThermoType>
 loadBalanced_pyJacChemistryModel<ThermoType>::loadBalanced_pyJacChemistryModel(
     const fluidMulticomponentThermo& thermo)
     : loadBalancedChemistryModel<ThermoType>(thermo),
-    c_(this->nSpecie()),
+    Y_(this->nSpecie()),
     sp_enth_form(this->nSpecie()) {
 
     if (this->chemistry_) {
@@ -77,73 +77,48 @@ loadBalanced_pyJacChemistryModel<ThermoType>::~loadBalanced_pyJacChemistryModel(
 
 template <class ThermoType>
 void loadBalanced_pyJacChemistryModel<ThermoType>::jacobian(
-    const scalar t, const scalarField& c, const label li, scalarField& dcdt, scalarSquareMatrix& J)
+    const scalar t, const scalarField& TYp, const label li, scalarField& dTYdt, scalarSquareMatrix& J)
     const {
 
-    std::vector<scalar> yToPyJac(this->nSpecie() + 1, 0.0);
-    std::vector<scalar> jac(this->nSpecie() * this->nSpecie(), 0.0);
+    scalarField yToPyJac(this->nSpecie(), 0.0);
+    scalarField jac(this->nSpecie() * this->nSpecie(), 0.0);
 
     J = Zero;
-    dcdt = Zero;
-    const scalar T = c[0];
-    const scalar p = c[this->nSpecie()];
-    scalar csum = 0.0;
+    dTYdt = Zero;
+    const scalar p = TYp[this->nSpecie()];
 
-    for (label i = 0; i < this->nSpecie() - 1; i++) {
-        this->c_[i] = max(c[i + 1], 0);
-        csum += this->c_[i];
+    yToPyJac[0] = TYp[0];
+    for (label i = 1; i < this->nSpecie(); i++) {
+        yToPyJac[i] = max(TYp[i], 0);
     }
-
-    this->c_[this->nSpecie() - 1] = 1.0 - csum; // The last specie
-    yToPyJac[0]                  = T;
-    // i=1->nSpecie are mass fractions
-    for (label i = 1; i < this->nSpecie(); i++) { yToPyJac[i] = this->c_[i - 1]; }
-    // The last specie
-
-    yToPyJac[this->nSpecie()] = this->c_[this->nSpecie() - 1];
-    // call pyJac Jacobian evaluation
-    eval_jacob(0, p, yToPyJac.data(), jac.data());
-    label k = 0;
+    
+    eval_jacob(0, p, yToPyJac.begin(), jac.begin());
+    
     for (label j = 0; j < this->nSpecie(); j++) {
-        for (label i = 0; i < this->nSpecie(); i++) { J[i][j] = jac[k + i]; }
-        k += this->nSpecie();
+        for (label i = 0; i < this->nSpecie(); i++) { 
+        J[i][j] = jac[i + j*this->nSpecie()];
+        }
     }
-
-    // Last row and column to zero
-    for (label j = 0; j < this->nSpecie() + 1; j++) {
-        J[this->nSpecie()][j] = 0.0;
-        J[j][this->nSpecie()] = 0.0;
-    }
-
 }
 
 template <class ThermoType>
 void loadBalanced_pyJacChemistryModel<ThermoType>::derivatives(
-    const scalar t, const scalarField& c, const label li, scalarField& dcdt) const {
+    const scalar t, const scalarField& TYp, const label li, scalarField& dTYpdt) const {
 
-    std::vector<scalar> yToPyJac(this->nSpecie() + 1, 0.0);
-    std::vector<scalar> dy(this->nSpecie(), 0.0);
+    scalarField yToPyJac(this->nSpecie(), 0.0);
 
-    const scalar T = c[0];
-    const scalar p = c[this->nSpecie()];
-    scalar csum = 0.0;
-    for (label i = 0; i < this->nSpecie() - 1; i++) {
-        this->c_[i] = max(c[i + 1], 0.0);
-        csum += this->c_[i];
+    const scalar p = TYp[this->nSpecie()];
+
+    yToPyJac[0] = TYp[0];
+    for (label i = 1; i < this->nSpecie(); i++) {
+        yToPyJac[i] = max(TYp[i], 0);
     }
-    this->c_[this->nSpecie() - 1] = 1.0 - csum; // The last specie
-
-    yToPyJac[0] = T;
-    // i=1->nSpecie are mass fractions
-    for (label i = 1; i < this->nSpecie(); i++) { yToPyJac[i] = this->c_[i - 1]; }
-    // The last specie
-    yToPyJac[this->nSpecie()] = this->c_[this->nSpecie() - 1];
-
+    
     // call pyJac RHS function
-    dydt(0, p, yToPyJac.data(), dy.data());
-    for (label i = 0; i < this->nSpecie(); i++) { dcdt[i] = dy[i]; }
+    dydt(0, p, yToPyJac.begin(), dTYpdt.begin());
+
     // dp/dt = 0
-    dcdt[this->nSpecie()] = 0.0;
+    dTYpdt[this->nSpecie()] = 0.0;
 }
 
 template <class ThermoType>
@@ -175,23 +150,15 @@ template <class ThermoType>
 Foam::tmp<Foam::volScalarField>
 loadBalanced_pyJacChemistryModel<ThermoType>::tc() const {
 
+    if(PYJAC_FWD_RATES()!=this->nReaction()) {
     FatalErrorInFunction
-        << "loadBalanced_pyJac chemistry model currently does not "<<
-            "support combustion models such as PaSR or EDC.\n" <<
-            "Please either use laminar combustion model, "<< 
-            "or use loadBalanced chemistry model." << exit(FatalError);
- 
-    tmp<volScalarField> ttc
-    (
-        volScalarField::New
-        (
-            "tc",
-            this->mesh(),
-            dimensionedScalar(dimTime, small),
-            extrapolatedCalculatedFvPatchScalarField::typeName
-        )
-    );
-    return ttc;
+        << "Number of reactions in pyJac (" << PYJAC_FWD_RATES() <<
+        ") and in OpenFOAM's native chemistry model (" << this->nReaction() <<
+        ") do not match.\nChemical time scale required in combustion models such "<<
+        "as PaSR or EDC is calculated using standard chemistry model \n" <<
+        "and thus reactions needs to be given for the native chemistry model as a list" << exit(FatalError);
+    }
+    return loadBalancedChemistryModel<ThermoType>::tc();
 }
 
 

@@ -89,25 +89,20 @@ namespace Foam
 #define loadBalanced_pyJacChemistryModelCppTest 2
 
 #include "makeChemistrySolver.H"
-#if ${method}ChemistryModelCppTest == loadBalancedChemistryModelCppTest
-    #include "${method}ChemistryModel.H"
-#elif ${method}ChemistryModelCppTest == loadBalanced_pyJacChemistryModelCppTest
-    #include "${method}ChemistryModel.H"
-#else
-    #include "${method}.H"
-#endif
+
+#include "${method}.H"
 #include "${solver}.H"
 
 namespace Foam
 {
-    #if ${method}ChemistryModelCppTest == loadBalanced_pyJacChemistryModelCppTest
+    #if ${method}CppTest == loadBalanced_pyJacChemistryModelCppTest
     defineChemistrySolver(chemistryModel, ThermoPhysics);
     makeChemistrySolver(${solver}, chemistryModel, ThermoPhysics);
     defineChemistrySolver(loadBalancedChemistryModel, ThermoPhysics);
     makeChemistrySolver(${solver}, loadBalancedChemistryModel, ThermoPhysics);
     defineChemistrySolver(loadBalanced_pyJacChemistryModel, ThermoPhysics);
     makeChemistrySolver(${solver}, loadBalanced_pyJacChemistryModel, ThermoPhysics);
-    #elif ${method}ChemistryModelCppTest == loadBalancedChemistryModelCppTest
+    #elif ${method}CppTest == loadBalancedChemistryModelCppTest
     defineChemistrySolver(chemistryModel, ThermoPhysics);
     makeChemistrySolver(${solver}, chemistryModel, ThermoPhysics);
     defineChemistrySolver(loadBalancedChemistryModel, ThermoPhysics);
@@ -120,6 +115,7 @@ namespace Foam
     makeChemistrySolver(${solver}, ${method}, ThermoPhysics);
     #endif
 }
+
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

@@ -6,7 +6,6 @@ set -e # Any subsequent(*) commands which fail will cause the shell script to ex
 # The supported OpenFOAM version
 OF_VER="12"
 
-
 check_openfoam()
 {
     if [ -z ${WM_PROJECT} ]; then
