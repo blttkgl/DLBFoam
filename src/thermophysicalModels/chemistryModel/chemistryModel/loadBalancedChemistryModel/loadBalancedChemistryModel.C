@@ -249,7 +249,12 @@ Foam::scalar Foam::loadBalancedChemistryModel<ThermoType>::solve
                 this->RR(j)[celli] = 0.0;
             }
         }
+        Info << "Chemistry is inactive" << endl;
         return great;
+    }
+    else
+    {
+        Info << "Chemistry is active" << endl;
     }
     timer.timeIncrement();
     DynamicList<ChemistryProblem> allProblems = getProblems(deltaT);
