@@ -109,6 +109,7 @@ Foam::loadBalancedChemistryModel<ThermoType>::
                 if (!header.headerOk())
                 {
                     this->thermo().setSpecieInactive(i);
+                    Info << "Inactive specie: "<< this->Y()[i].name()<<endl;
                 }
             }
             this->thermo().syncSpeciesActive();
@@ -207,6 +208,7 @@ Foam::scalar Foam::loadBalancedChemistryModel<ThermoType>::solve
                 this->thermo().setSpecieActive(i);
             }
         }
+        this->thermo().syncSpeciesActive();
     }
     else
     {
@@ -217,22 +219,10 @@ Foam::scalar Foam::loadBalancedChemistryModel<ThermoType>::solve
     {
         for(label i = 0; i < this->nSpecie(); i++)
         {
-            if(i == this->thermo().defaultSpecie())
-            {
-                continue;
-            }
-            else
-            {
-                if(!this->thermo().speciesActive()[i])
-                {
-                    this->thermo().setSpecieActive(i);
-                }
-            }
-
+            this->thermo().setSpecieActive(i);
         }
         resetSkipSpecies_ = false;
     }
-    this->thermo().syncSpeciesActive();
 
     if(!chemistry())
     {
@@ -292,7 +282,7 @@ Foam::scalar Foam::loadBalancedChemistryModel<ThermoType>::solve
 
     if(balancer_.log())
     {
-        if(balancer_.active())
+        if(balancer_.active() && balancer_.verbose)
         {
             balancer_.printState();
         }

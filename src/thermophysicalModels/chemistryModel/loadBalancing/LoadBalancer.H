@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
-  \\      /  F ield         | DLBFoam: Dynamic Load Balancing 
+  \\      /  F ield         | DLBFoam: Dynamic Load Balancing
    \\    /   O peration     | for fast reactive simulations
-    \\  /    A nd           | 
+    \\  /    A nd           |
      \\/     M anipulation  | 2020, Aalto University, Finland
 -------------------------------------------------------------------------------
 License
@@ -27,7 +27,7 @@ Class
 Description
     Extends the base class LoadBalancerBase by implementing a
     balancing algorithm which tries to set the global mean load to each rank.
-    
+
 SourceFiles
     LoadBalancer.C
 \*---------------------------------------------------------------------------*/
@@ -70,7 +70,8 @@ public:
         : LoadBalancerBase(), dict_(dict),
           coeffsDict_(dict.subDict("loadbalancing")),
           active_(coeffsDict_.lookupOrDefault<Switch>("active", true)),
-          log_(coeffsDict_.lookupOrDefault<Switch>("log", false))
+          log_(coeffsDict_.lookupOrDefault<Switch>("log", false)),
+          verbose_(coeffsDict_.lookupOrDefault<Switch>("verbose", false))
     {
     }
 
@@ -90,6 +91,12 @@ public:
     bool log() const
     {
         return log_;
+    }
+
+    //- Is load balancing log is verbose (writes to main log file)?
+    bool verbose() const
+    {
+        return verbose_;
     }
 
 
@@ -125,6 +132,9 @@ private:
 
     // Is load balancing logged?
     Switch log_;
+
+    // Is load balancing log verbose?
+    Switch verbose_;
 
     //- Check if the rank is a sender
     static bool isSender(const std::vector<Operation>& operations, int rank);
