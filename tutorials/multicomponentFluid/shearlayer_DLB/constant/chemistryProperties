@@ -40,8 +40,9 @@ initialChemicalTimeStep 1;
 
 loadbalancing
 {
-	active	true;
-	log	true;
+	active	    true;
+	log 	    true;
+	verbose 	true;
 }
 
 chemistryType
