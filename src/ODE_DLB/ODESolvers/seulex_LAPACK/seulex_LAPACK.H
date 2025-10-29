@@ -55,8 +55,15 @@ SourceFiles
 #include "mkl_lapack.h"
 #else
 #include "lapacke.h"
+#if defined(LAPACK_dgetrs) && defined(LAPACK_dgetrf)
+#define dgetrs_(...) LAPACK_dgetrs (__VA_ARGS__)
+#define dgetrf_(...) LAPACK_dgetrf (__VA_ARGS__)
 #endif
+#endif
+
+#ifndef lapack_int
 #define lapack_int int
+#endif
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
