@@ -201,6 +201,7 @@ Foam::scalar Foam::loadBalancedChemistryModel<ThermoType>::solve
             if(maxY < skipThreshold_)
             {
                 this->thermo().setSpecieInactive(i);
+                const_cast<volScalarField&>(this->Y()[i]) == 0;
             }
             else
             {
