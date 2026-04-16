@@ -1,13 +1,12 @@
 /*--------------------------------*- C++ -*----------------------------------*\
   =========                 |
-  \\      /  F ield         | DLBFoam: Dynamic Load Balancing
-   \\    /   O peration     | for fast reactive simulations
-    \\  /    A nd           |
-     \\/     M anipulation  | 2020, Aalto University, Finland
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  dev
+     \\/     M anipulation  |
 \*---------------------------------------------------------------------------*/
 FoamFile
 {
-    version     2.0;
     format      ascii;
     class       dictionary;
     location    "constant";
@@ -23,7 +22,7 @@ chemistryType
 
 chemistry       on;
 
-initialChemicalTimeStep 1e30; // - should not influence ODE stability if all good.
+initialChemicalTimeStep 1e+30;
 
 odeCoeffs
 {
@@ -34,15 +33,24 @@ odeCoeffs
 
 loadbalancing
 {
-    log     false;
+    log             false;
 }
 
 refmapping
 {
-
 }
 
-// reactions dictionary is empty - {}
-#include "../../../pyjacTestMechanism/foam/reactions.foam"
+#include        "../../../pyjacTestMechanism/foam/reactions.foam"
+#includeEtc     "caseDicts/solvers/chemistry/TDAC/chemistryProperties.cfg"
+tabulation
+{
+    method          ISAT_pyJac;
+}
+
+reduction
+{
+    method          none;
+}
+
 
 // ************************************************************************* //
