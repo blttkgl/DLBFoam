@@ -74,11 +74,10 @@ Foam::loadBalancedChemistryModel<ThermoType>::
             this->lookupOrDefault
             (
                 "begin",
-                unitNone,
                 this->time().beginTime().value()
             )
         ),
-        repeat_(this->lookupOrDefault("repeat", unitNone, 0))
+        repeat_(this->lookupOrDefault("repeat", 0))
     {
         if(balancer_.log())
         {
